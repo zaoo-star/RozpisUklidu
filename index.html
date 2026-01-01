@@ -1,533 +1,653 @@
 <!DOCTYPE html>
 <html lang="cs">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no"
-    />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Moje úklidy</title>
     <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        background: #f0f4f8;
-        min-height: 100vh;
-        padding-bottom: 100px;
-      }
-
-      header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px;
-        text-align: center;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-
-      header h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-      }
-
-      .stats {
-        display: flex;
-        justify-content: space-around;
-        padding: 15px;
-        background: white;
-        margin: 15px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      }
-
-      .stat {
-        text-align: center;
-      }
-
-      .stat-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #667eea;
-      }
-
-      .stat-label {
-        font-size: 0.75rem;
-        color: #666;
-        margin-top: 2px;
-      }
-
-      .section-title {
-        padding: 15px 20px 10px;
-        font-size: 0.85rem;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-
-      .cleaning-list {
-        padding: 0 15px;
-      }
-
-      .cleaning-card {
-        background: white;
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-
-      .cleaning-card:active {
-        transform: scale(0.98);
-      }
-
-      .cleaning-info {
-        flex: 1;
-      }
-
-      .cleaning-address {
-        font-weight: 600;
-        color: #333;
-        font-size: 1rem;
-        margin-bottom: 4px;
-      }
-
-      .cleaning-meta {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-
-      .cleaning-date {
-        color: #888;
-        font-size: 0.85rem;
-      }
-
-      .cleaning-km {
-        color: #667eea;
-        font-size: 0.85rem;
-        font-weight: 500;
-      }
-
-      .cleaning-duration {
-        color: #f59e0b;
-        font-size: 0.85rem;
-        font-weight: 500;
-      }
-
-      .cleaning-price {
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: #10b981;
-        margin-left: 15px;
-      }
-
-      .delete-btn {
-        background: #fee2e2;
-        color: #ef4444;
-        border: none;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        margin-left: 12px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        transition: background 0.2s;
-      }
-
-      .delete-btn:active {
-        background: #fecaca;
-      }
-
-      .add-btn {
-        position: fixed;
-        bottom: 25px;
-        right: 25px;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        font-size: 2rem;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-
-      .add-btn:active {
-        transform: scale(0.95);
-      }
-
-      .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 200;
-        align-items: flex-end;
-        justify-content: center;
-      }
-
-      .modal.active {
-        display: flex;
-      }
-
-      .modal-content {
-        background: white;
-        width: 100%;
-        max-width: 500px;
-        border-radius: 20px 20px 0 0;
-        padding: 25px;
-        animation: slideUp 0.3s ease;
-      }
-
-      @keyframes slideUp {
-        from {
-          transform: translateY(100%);
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        to {
-          transform: translateY(0);
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            padding-bottom: 120px;
         }
-      }
 
-      .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-      }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
 
-      .modal-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #333;
-      }
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
 
-      .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: #888;
-        cursor: pointer;
-        padding: 5px;
-      }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: white;
+            margin: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
 
-      .form-row {
-        display: flex;
-        gap: 12px;
-      }
+        .stat {
+            text-align: center;
+        }
 
-      .form-row .form-group {
-        flex: 1;
-      }
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #667eea;
+        }
 
-      .form-group {
-        margin-bottom: 18px;
-      }
+        .stat-label {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 2px;
+        }
 
-      .form-group label {
-        display: block;
-        margin-bottom: 6px;
-        color: #555;
-        font-size: 0.9rem;
-        font-weight: 500;
-      }
+        .section-title {
+            padding: 15px 20px 10px;
+            font-size: 0.85rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-      .form-group input {
-        width: 100%;
-        padding: 14px;
-        border: 2px solid #e5e7eb;
-        border-radius: 10px;
-        font-size: 1rem;
-        transition: border-color 0.2s;
-      }
+        .cleaning-list {
+            padding: 0 15px;
+        }
 
-      .form-group input:focus {
-        outline: none;
-        border-color: #667eea;
-      }
+        .cleaning-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-      .submit-btn {
-        width: 100%;
-        padding: 16px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        margin-top: 10px;
-        transition: opacity 0.2s;
-      }
+        .cleaning-card.planned {
+            border-left: 4px solid #3b82f6;
+        }
 
-      .submit-btn:active {
-        opacity: 0.9;
-      }
+        .cleaning-card.unpaid {
+            border-left: 4px solid #f59e0b;
+        }
 
-      .empty-state {
-        text-align: center;
-        padding: 50px 20px;
-        color: #888;
-      }
+        .cleaning-card.paid {
+            border-left: 4px solid #10b981;
+            opacity: 0.7;
+        }
 
-      .empty-state-icon {
-        font-size: 3rem;
-        margin-bottom: 15px;
-      }
+        .cleaning-info {
+            flex: 1;
+        }
 
-      .empty-state-text {
-        font-size: 1rem;
-      }
+        .cleaning-address {
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .cleaning-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .cleaning-price {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #10b981;
+            margin-left: 10px;
+        }
+
+        .card-buttons {
+            display: flex;
+            gap: 8px;
+            margin-left: 10px;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-edit {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .btn-paid {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .add-buttons {
+            position: fixed;
+            bottom: 20px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .add-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .add-btn-plan {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+
+        .add-btn-done {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 20px 20px 0 0;
+            padding: 25px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #888;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+
+        .history-toggle {
+            text-align: center;
+            padding: 15px;
+            margin: 10px 15px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .history-list {
+            display: none;
+        }
+
+        .missing-info {
+            color: #f59e0b;
+            font-size: 0.75rem;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <header>
-      <h1>🧹 Moje úklidy</h1>
+        <h1>🧹 Moje úklidy</h1>
     </header>
 
     <div class="stats">
-      <div class="stat">
-        <div class="stat-value" id="totalCount">0</div>
-        <div class="stat-label">Úklidů</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value" id="totalEarnings">0 Kč</div>
-        <div class="stat-label">Celkem</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value" id="totalHours">0h</div>
-        <div class="stat-label">Odpracováno</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value" id="totalKm">0</div>
-        <div class="stat-label">Km</div>
-      </div>
+        <div class="stat">
+            <div class="stat-value" id="statCount">0</div>
+            <div class="stat-label">K zaplacení</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="statMoney">0 Kč</div>
+            <div class="stat-label">Dlužno</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="statHours">0h</div>
+            <div class="stat-label">Hodin</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="statKm">0</div>
+            <div class="stat-label">Km</div>
+        </div>
     </div>
 
-    <div class="section-title">Nezaplacené úklidy</div>
-    <div class="cleaning-list" id="cleaningList"></div>
+    <div id="plannedSection" style="display:none">
+        <div class="section-title">📅 Naplánované</div>
+        <div class="cleaning-list" id="plannedList"></div>
+    </div>
 
-    <button class="add-btn" onclick="openModal()">+</button>
+    <div id="unpaidSection" style="display:none">
+        <div class="section-title">⏳ Nezaplacené</div>
+        <div class="cleaning-list" id="unpaidList"></div>
+    </div>
+
+    <div id="emptyState" class="empty-state">
+        <div style="font-size:3rem;margin-bottom:15px">✨</div>
+        <div>Zatím žádné úklidy</div>
+    </div>
+
+    <div id="historyToggle" class="history-toggle" style="display:none">
+        📜 Zobrazit historii (<span id="historyCount">0</span>)
+    </div>
+    <div class="cleaning-list history-list" id="historyList"></div>
+
+    <div class="add-buttons">
+        <button class="add-btn add-btn-plan" id="btnPlan">
+            📅 Naplánovat
+        </button>
+        <button class="add-btn add-btn-done" id="btnDone">
+            ✅ Už uklizeno
+        </button>
+    </div>
 
     <div class="modal" id="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 class="modal-title">Nový úklid</h2>
-          <button class="close-btn" onclick="closeModal()">×</button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Nový úklid</h2>
+                <button class="close-btn" id="btnClose">×</button>
+            </div>
+            <div class="form-group">
+                <label>Adresa</label>
+                <input type="text" id="inputAddress" placeholder="např. Vodičkova 12, Praha">
+            </div>
+            <div class="form-group">
+                <label>Datum</label>
+                <input type="date" id="inputDate">
+            </div>
+            <div class="form-group" id="groupDuration">
+                <label>Doba (min)</label>
+                <input type="number" id="inputDuration" placeholder="např. 90">
+            </div>
+            <div class="form-group" id="groupPrice">
+                <label>Cena (Kč)</label>
+                <input type="number" id="inputPrice" placeholder="např. 500">
+            </div>
+            <div class="form-group">
+                <label>Doprava (km)</label>
+                <input type="number" id="inputKm" placeholder="nepovinné" step="0.1">
+            </div>
+            <button class="submit-btn" id="btnSubmit">Přidat</button>
         </div>
-        <form onsubmit="addCleaning(event)">
-          <div class="form-group">
-            <label for="address">Adresa</label>
-            <input
-              type="text"
-              id="address"
-              placeholder="např. Vodičkova 12, Praha"
-              required
-            />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="date">Datum</label>
-              <input type="date" id="date" required />
-            </div>
-            <div class="form-group">
-              <label for="duration">Doba (min)</label>
-              <input type="number" id="duration" placeholder="90" min="1" />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="price">Cena (Kč)</label>
-              <input
-                type="number"
-                id="price"
-                placeholder="500"
-                required
-                min="0"
-              />
-            </div>
-            <div class="form-group">
-              <label for="km">Doprava (km)</label>
-              <input type="number" id="km" placeholder="0" min="0" step="0.1" />
-            </div>
-          </div>
-          <button type="submit" class="submit-btn">Přidat úklid</button>
-        </form>
-      </div>
     </div>
 
     <script>
-      let cleanings = JSON.parse(localStorage.getItem("cleanings")) || [];
+        // Data
+        let cleanings = [];
+        let currentMode = null;
+        let currentEditId = null;
 
-      function saveCleanings() {
-        localStorage.setItem("cleanings", JSON.stringify(cleanings));
-      }
+        // Load data
+        try {
+            cleanings = JSON.parse(localStorage.getItem('cleanings')) || [];
+        } catch(e) {
+            cleanings = [];
+        }
 
-      function formatDate(dateStr) {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString("cs-CZ", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        });
-      }
+        // Save data
+        function save() {
+            localStorage.setItem('cleanings', JSON.stringify(cleanings));
+        }
 
-      function formatDuration(minutes) {
-        if (!minutes) return "";
-        const h = Math.floor(minutes / 60);
-        const m = minutes % 60;
-        if (h === 0) return `${m} min`;
-        if (m === 0) return `${h} hod`;
-        return `${h}h ${m}m`;
-      }
+        // Format helpers
+        function formatDate(d) {
+            return new Date(d).toLocaleDateString('cs-CZ', {day:'numeric', month:'long', year:'numeric'});
+        }
 
-      function formatPrice(price) {
-        return new Intl.NumberFormat("cs-CZ").format(price) + " Kč";
-      }
+        function formatDuration(min) {
+            if (!min) return '';
+            const h = Math.floor(min / 60);
+            const m = min % 60;
+            if (h === 0) return m + ' min';
+            if (m === 0) return h + 'h';
+            return h + 'h ' + m + 'm';
+        }
 
-      function renderCleanings() {
-        const list = document.getElementById("cleaningList");
+        // Render
+        function render() {
+            const today = new Date();
+            today.setHours(0,0,0,0);
 
-        if (cleanings.length === 0) {
-          list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">✨</div>
-                        <div class="empty-state-text">Zatím žádné úklidy.<br>Přidej první kliknutím na +</div>
-                    </div>
-                `;
-        } else {
-          const sorted = [...cleanings].sort(
-            (a, b) => new Date(b.date) - new Date(a.date)
-          );
-          list.innerHTML = sorted
-            .map(
-              (c) => `
-                    <div class="cleaning-card">
-                        <div class="cleaning-info">
-                            <div class="cleaning-address">${c.address}</div>
-                            <div class="cleaning-meta">
-                                <div class="cleaning-date">${formatDate(
-                                  c.date
-                                )}</div>
-                                ${
-                                  c.duration
-                                    ? `<div class="cleaning-duration">⏱ ${formatDuration(
-                                        c.duration
-                                      )}</div>`
-                                    : ""
-                                }
-                                ${
-                                  c.km
-                                    ? `<div class="cleaning-km">🚗 ${c.km} km</div>`
-                                    : ""
-                                }
-                            </div>
+            const planned = cleanings.filter(c => {
+                if (c.paid) return false;
+                const cDate = new Date(c.date);
+                cDate.setHours(0,0,0,0);
+                return cDate > today;
+            });
+            
+            const unpaid = cleanings.filter(c => {
+                if (c.paid) return false;
+                const cDate = new Date(c.date);
+                cDate.setHours(0,0,0,0);
+                return cDate <= today;
+            });
+            
+            const history = cleanings.filter(c => c.paid);
+
+            // Planned
+            const plannedSection = document.getElementById('plannedSection');
+            const plannedList = document.getElementById('plannedList');
+            if (planned.length > 0) {
+                plannedSection.style.display = 'block';
+                plannedList.innerHTML = planned
+                    .sort((a,b) => new Date(a.date) - new Date(b.date))
+                    .map(c => cardHTML(c, 'planned')).join('');
+            } else {
+                plannedSection.style.display = 'none';
+            }
+
+            // Unpaid
+            const unpaidSection = document.getElementById('unpaidSection');
+            const unpaidList = document.getElementById('unpaidList');
+            if (unpaid.length > 0) {
+                unpaidSection.style.display = 'block';
+                unpaidList.innerHTML = unpaid
+                    .sort((a,b) => new Date(b.date) - new Date(a.date))
+                    .map(c => cardHTML(c, 'unpaid')).join('');
+            } else {
+                unpaidSection.style.display = 'none';
+            }
+
+            // Empty state
+            document.getElementById('emptyState').style.display = 
+                (planned.length === 0 && unpaid.length === 0) ? 'block' : 'none';
+
+            // History
+            const historyToggle = document.getElementById('historyToggle');
+            const historyList = document.getElementById('historyList');
+            if (history.length > 0) {
+                historyToggle.style.display = 'block';
+                document.getElementById('historyCount').textContent = history.length;
+                historyList.innerHTML = history
+                    .sort((a,b) => new Date(b.date) - new Date(a.date))
+                    .map(c => cardHTML(c, 'paid')).join('');
+            } else {
+                historyToggle.style.display = 'none';
+            }
+
+            // Stats (only unpaid)
+            const totalMoney = unpaid.reduce((s,c) => s + (c.price || 0), 0);
+            const totalMin = unpaid.reduce((s,c) => s + (c.duration || 0), 0);
+            const totalKm = unpaid.reduce((s,c) => s + (c.km || 0), 0);
+            
+            document.getElementById('statCount').textContent = unpaid.length;
+            document.getElementById('statMoney').textContent = totalMoney.toLocaleString('cs-CZ') + ' Kč';
+            document.getElementById('statHours').textContent = formatDuration(totalMin) || '0h';
+            document.getElementById('statKm').textContent = totalKm;
+
+            // Add event listeners to cards
+            document.querySelectorAll('[data-action]').forEach(btn => {
+                btn.onclick = function() {
+                    const action = this.dataset.action;
+                    const id = this.dataset.id;
+                    if (action === 'edit') editItem(id);
+                    if (action === 'paid') markPaid(id);
+                    if (action === 'delete') deleteItem(id);
+                };
+            });
+        }
+
+        function cardHTML(c, type) {
+            const missing = !c.price || !c.duration;
+            return `
+                <div class="cleaning-card ${type}">
+                    <div class="cleaning-info">
+                        <div class="cleaning-address">${c.address}</div>
+                        <div class="cleaning-meta">
+                            <span>${formatDate(c.date)}</span>
+                            ${c.duration ? '<span>⏱ ' + formatDuration(c.duration) + '</span>' : ''}
+                            ${c.km ? '<span>🚗 ' + c.km + ' km</span>' : ''}
                         </div>
-                        <div class="cleaning-price">${formatPrice(
-                          c.price
-                        )}</div>
-                        <button class="delete-btn" onclick="deleteCleaning('${
-                          c.id
-                        }')" title="Zaplaceno - smazat">✓</button>
+                        ${missing && type !== 'paid' ? '<div class="missing-info">✏️ Doplň údaje</div>' : ''}
                     </div>
-                `
-            )
-            .join("");
+                    <div class="cleaning-price">${c.price ? c.price.toLocaleString('cs-CZ') + ' Kč' : '—'}</div>
+                    <div class="card-buttons">
+                        ${type !== 'paid' ? '<button class="btn-icon btn-edit" data-action="edit" data-id="'+c.id+'">✏️</button>' : ''}
+                        ${type === 'unpaid' ? '<button class="btn-icon btn-paid" data-action="paid" data-id="'+c.id+'">✓</button>' : ''}
+                        ${type === 'planned' || type === 'paid' ? '<button class="btn-icon btn-delete" data-action="delete" data-id="'+c.id+'">×</button>' : ''}
+                    </div>
+                </div>
+            `;
         }
 
-        updateStats();
-      }
-
-      function updateStats() {
-        const total = cleanings.reduce((sum, c) => sum + c.price, 0);
-        const totalKm = cleanings.reduce((sum, c) => sum + (c.km || 0), 0);
-        const totalMinutes = cleanings.reduce(
-          (sum, c) => sum + (c.duration || 0),
-          0
-        );
-        const totalH = Math.floor(totalMinutes / 60);
-        const totalM = totalMinutes % 60;
-
-        document.getElementById("totalCount").textContent = cleanings.length;
-        document.getElementById("totalEarnings").textContent =
-          formatPrice(total);
-        document.getElementById("totalHours").textContent =
-          totalM > 0 ? `${totalH}h ${totalM}m` : `${totalH}h`;
-        document.getElementById("totalKm").textContent =
-          totalKm % 1 === 0 ? totalKm : totalKm.toFixed(1);
-      }
-
-      function openModal() {
-        document.getElementById("modal").classList.add("active");
-        document.getElementById("date").valueAsDate = new Date();
-        document.getElementById("address").focus();
-      }
-
-      function closeModal() {
-        document.getElementById("modal").classList.remove("active");
-        document.getElementById("address").value = "";
-        document.getElementById("duration").value = "";
-        document.getElementById("price").value = "";
-        document.getElementById("km").value = "";
-      }
-
-      function addCleaning(e) {
-        e.preventDefault();
-
-        const cleaning = {
-          id: Date.now().toString(),
-          address: document.getElementById("address").value,
-          date: document.getElementById("date").value,
-          duration: parseInt(document.getElementById("duration").value) || 0,
-          price: parseInt(document.getElementById("price").value),
-          km: parseFloat(document.getElementById("km").value) || 0,
-        };
-
-        cleanings.push(cleaning);
-        saveCleanings();
-        renderCleanings();
-        closeModal();
-      }
-
-      function deleteCleaning(id) {
-        if (confirm("Označit jako zaplaceno a smazat?")) {
-          cleanings = cleanings.filter((c) => c.id !== id);
-          saveCleanings();
-          renderCleanings();
+        // Actions
+        function editItem(id) {
+            const c = cleanings.find(x => x.id === id);
+            if (!c) return;
+            currentMode = 'edit';
+            currentEditId = id;
+            document.getElementById('modalTitle').textContent = 'Upravit úklid';
+            document.getElementById('inputAddress').value = c.address;
+            document.getElementById('inputDate').value = c.date;
+            document.getElementById('inputDuration').value = c.duration || '';
+            document.getElementById('inputPrice').value = c.price || '';
+            document.getElementById('inputKm').value = c.km || '';
+            document.getElementById('groupDuration').style.display = 'block';
+            document.getElementById('groupPrice').style.display = 'block';
+            document.getElementById('btnSubmit').textContent = 'Uložit';
+            document.getElementById('modal').classList.add('active');
         }
-      }
 
-      // Close modal on background click
-      document.getElementById("modal").addEventListener("click", (e) => {
-        if (e.target.id === "modal") {
-          closeModal();
+        function markPaid(id) {
+            const c = cleanings.find(x => x.id === id);
+            if (c) {
+                c.paid = true;
+                save();
+                render();
+            }
         }
-      });
 
-      // Initial render
-      renderCleanings();
+        function deleteItem(id) {
+            if (confirm('Opravdu smazat?')) {
+                cleanings = cleanings.filter(x => x.id !== id);
+                save();
+                render();
+            }
+        }
+
+        function openModal(mode) {
+            currentMode = mode;
+            currentEditId = null;
+            document.getElementById('inputAddress').value = '';
+            document.getElementById('inputDuration').value = '';
+            document.getElementById('inputPrice').value = '';
+            document.getElementById('inputKm').value = '';
+            
+            if (mode === 'plan') {
+                document.getElementById('modalTitle').textContent = '📅 Naplánovat úklid';
+                document.getElementById('btnSubmit').textContent = 'Naplánovat';
+                document.getElementById('groupDuration').style.display = 'none';
+                document.getElementById('groupPrice').style.display = 'none';
+                // Tomorrow
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                document.getElementById('inputDate').value = tomorrow.toISOString().split('T')[0];
+            } else {
+                document.getElementById('modalTitle').textContent = '✅ Přidat hotový úklid';
+                document.getElementById('btnSubmit').textContent = 'Přidat';
+                document.getElementById('groupDuration').style.display = 'block';
+                document.getElementById('groupPrice').style.display = 'block';
+                // Today
+                document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+            }
+            
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        function submitForm() {
+            const address = document.getElementById('inputAddress').value.trim();
+            const date = document.getElementById('inputDate').value;
+            
+            if (!address || !date) {
+                alert('Vyplň adresu a datum');
+                return;
+            }
+
+            const data = {
+                address: address,
+                date: date,
+                duration: parseInt(document.getElementById('inputDuration').value) || 0,
+                price: parseInt(document.getElementById('inputPrice').value) || 0,
+                km: parseFloat(document.getElementById('inputKm').value) || 0
+            };
+
+            if (currentMode === 'edit' && currentEditId) {
+                const c = cleanings.find(x => x.id === currentEditId);
+                if (c) Object.assign(c, data);
+            } else {
+                cleanings.push({
+                    id: Date.now().toString(),
+                    ...data,
+                    paid: false
+                });
+            }
+
+            save();
+            render();
+            closeModal();
+        }
+
+        // Event listeners
+        document.getElementById('btnPlan').addEventListener('click', function() {
+            openModal('plan');
+        });
+
+        document.getElementById('btnDone').addEventListener('click', function() {
+            openModal('done');
+        });
+
+        document.getElementById('btnClose').addEventListener('click', closeModal);
+
+        document.getElementById('btnSubmit').addEventListener('click', submitForm);
+
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.getElementById('historyToggle').addEventListener('click', function() {
+            const list = document.getElementById('historyList');
+            if (list.style.display === 'none' || list.style.display === '') {
+                list.style.display = 'block';
+                this.textContent = '📜 Skrýt historii';
+            } else {
+                list.style.display = 'none';
+                this.innerHTML = '📜 Zobrazit historii (<span id="historyCount">' + cleanings.filter(c=>c.paid).length + '</span>)';
+            }
+        });
+
+        // Init
+        render();
     </script>
-  </body>
+</body>
 </html>
