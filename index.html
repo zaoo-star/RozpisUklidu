@@ -50,6 +50,14 @@
             color: #667eea;
         }
 
+        .stat-value.stat-expenses {
+            color: #ef4444;
+        }
+
+        .stat-value.stat-profit {
+            color: #10b981;
+        }
+
         .stat-label {
             font-size: 0.7rem;
             color: #666;
@@ -122,18 +130,22 @@
             display: flex;
             gap: 8px;
             margin-left: 10px;
+            position: relative;
+            z-index: 10;
         }
 
         .btn-icon {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             border: none;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .btn-edit {
@@ -141,14 +153,26 @@
             color: #d97706;
         }
 
+        .btn-edit:active {
+            background: #fde68a;
+        }
+
         .btn-paid {
             background: #dcfce7;
             color: #16a34a;
         }
 
+        .btn-paid:active {
+            background: #bbf7d0;
+        }
+
         .btn-delete {
             background: #fee2e2;
             color: #ef4444;
+        }
+
+        .btn-delete:active {
+            background: #fecaca;
         }
 
         .add-buttons {
@@ -243,17 +267,23 @@
             font-weight: 500;
         }
 
-        .form-group input {
+        .form-group input, .form-group textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
             font-size: 1rem;
+            font-family: inherit;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
         }
 
         .submit-btn {
@@ -293,6 +323,124 @@
             color: #f59e0b;
             font-size: 0.75rem;
         }
+
+        .cleaning-notes {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .help-box {
+            margin: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .help-header {
+            padding: 12px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .help-content {
+            display: none;
+            padding: 0 15px 15px;
+            font-size: 0.85rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .help-content.active {
+            display: block;
+        }
+
+        .help-content p {
+            margin-bottom: 8px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+        }
+
+        .setting-row label {
+            color: #555;
+        }
+
+        .setting-input {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .setting-input input {
+            width: 70px;
+            padding: 8px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .setting-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .setting-input span {
+            color: #888;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-bottom: 70px;
+        }
+
+        .confirm-content {
+            text-align: center;
+            padding: 30px 25px;
+        }
+
+        .confirm-text {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .confirm-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .confirm-no {
+            background: #e5e7eb;
+            color: #666;
+        }
+
+        .confirm-yes {
+            background: #10b981;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -310,12 +458,16 @@
             <div class="stat-label">Dlužno</div>
         </div>
         <div class="stat">
-            <div class="stat-value" id="statHours">0h</div>
-            <div class="stat-label">Hodin</div>
+            <div class="stat-value stat-expenses" id="statExpenses">0 Kč</div>
+            <div class="stat-label">Náklady</div>
         </div>
         <div class="stat">
-            <div class="stat-value" id="statKm">0</div>
-            <div class="stat-label">Km</div>
+            <div class="stat-value" id="statKmMoney">0 Kč</div>
+            <div class="stat-label">Za km</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value stat-profit" id="statProfit">0 Kč</div>
+            <div class="stat-label">Čistý zisk</div>
         </div>
     </div>
 
@@ -334,6 +486,35 @@
         <div>Zatím žádné úklidy</div>
     </div>
 
+    <div class="help-box" id="helpBox">
+        <div class="help-header" id="helpToggle">
+            ❓ Nápověda
+        </div>
+        <div class="help-content" id="helpContent">
+            <p><strong>📅 Naplánovat</strong> – úklid v budoucnu, zadáš jen adresu a datum</p>
+            <p><strong>✅ Už uklizeno</strong> – hotový úklid, vyplníš i cenu a dobu</p>
+            <p><strong>✏️</strong> – upravit údaje (doplnit cenu po úklidu)</p>
+            <p><strong>✓</strong> – označit jako zaplaceno → přesune se do historie</p>
+            <p><strong>×</strong> – smazat úklid</p>
+            <p><strong>Náklady</strong> – čisticí prostředky apod. se odečtou od zisku</p>
+        </div>
+    </div>
+
+    <div class="help-box">
+        <div class="help-header" id="settingsToggle">
+            ⚙️ Nastavení
+        </div>
+        <div class="help-content" id="settingsContent">
+            <div class="setting-row">
+                <label>Cena za 1 km:</label>
+                <div class="setting-input">
+                    <input type="number" id="inputKmPrice" value="7" min="0" step="0.5">
+                    <span>Kč</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="historyToggle" class="history-toggle" style="display:none">
         📜 Zobrazit historii (<span id="historyCount">0</span>)
     </div>
@@ -347,6 +528,8 @@
             ✅ Už uklizeno
         </button>
     </div>
+
+    <div class="footer">Vytvořil Zaoo</div>
 
     <div class="modal" id="modal">
         <div class="modal-content">
@@ -374,7 +557,25 @@
                 <label>Doprava (km)</label>
                 <input type="number" id="inputKm" placeholder="nepovinné" step="0.1">
             </div>
+            <div class="form-group" id="groupExpenses">
+                <label>Náklady (Kč)</label>
+                <input type="number" id="inputExpenses" placeholder="např. čisticí prostředky">
+            </div>
+            <div class="form-group">
+                <label>Poznámky</label>
+                <textarea id="inputNotes" placeholder="nepovinné" rows="2"></textarea>
+            </div>
             <button class="submit-btn" id="btnSubmit">Přidat</button>
+        </div>
+    </div>
+
+    <div class="modal" id="confirmModal">
+        <div class="modal-content confirm-content">
+            <div class="confirm-text" id="confirmText">Opravdu?</div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn confirm-no" id="confirmNo">Ne</button>
+                <button class="confirm-btn confirm-yes" id="confirmYes">Ano</button>
+            </div>
         </div>
     </div>
 
@@ -383,17 +584,21 @@
         let cleanings = [];
         let currentMode = null;
         let currentEditId = null;
+        let kmPrice = 7;
 
         // Load data
         try {
             cleanings = JSON.parse(localStorage.getItem('cleanings')) || [];
+            kmPrice = parseFloat(localStorage.getItem('kmPrice')) || 7;
         } catch(e) {
             cleanings = [];
+            kmPrice = 7;
         }
 
         // Save data
         function save() {
             localStorage.setItem('cleanings', JSON.stringify(cleanings));
+            localStorage.setItem('kmPrice', kmPrice.toString());
         }
 
         // Format helpers
@@ -474,13 +679,16 @@
 
             // Stats (only unpaid)
             const totalMoney = unpaid.reduce((s,c) => s + (c.price || 0), 0);
-            const totalMin = unpaid.reduce((s,c) => s + (c.duration || 0), 0);
+            const totalExpenses = unpaid.reduce((s,c) => s + (c.expenses || 0), 0);
             const totalKm = unpaid.reduce((s,c) => s + (c.km || 0), 0);
+            const totalKmMoney = Math.round(totalKm * kmPrice);
+            const totalProfit = totalMoney - totalExpenses + totalKmMoney;
             
             document.getElementById('statCount').textContent = unpaid.length;
             document.getElementById('statMoney').textContent = totalMoney.toLocaleString('cs-CZ') + ' Kč';
-            document.getElementById('statHours').textContent = formatDuration(totalMin) || '0h';
-            document.getElementById('statKm').textContent = totalKm;
+            document.getElementById('statExpenses').textContent = totalExpenses.toLocaleString('cs-CZ') + ' Kč';
+            document.getElementById('statKmMoney').textContent = totalKmMoney.toLocaleString('cs-CZ') + ' Kč';
+            document.getElementById('statProfit').textContent = totalProfit.toLocaleString('cs-CZ') + ' Kč';
 
             // Add event listeners to cards
             document.querySelectorAll('[data-action]').forEach(btn => {
@@ -496,6 +704,7 @@
 
         function cardHTML(c, type) {
             const missing = !c.price || !c.duration;
+            const profit = (c.price || 0) - (c.expenses || 0);
             return `
                 <div class="cleaning-card ${type}">
                     <div class="cleaning-info">
@@ -504,7 +713,9 @@
                             <span>${formatDate(c.date)}</span>
                             ${c.duration ? '<span>⏱ ' + formatDuration(c.duration) + '</span>' : ''}
                             ${c.km ? '<span>🚗 ' + c.km + ' km</span>' : ''}
+                            ${c.expenses ? '<span>💸 -' + c.expenses + ' Kč</span>' : ''}
                         </div>
+                        ${c.notes ? '<div class="cleaning-notes">📝 ' + c.notes + '</div>' : ''}
                         ${missing && type !== 'paid' ? '<div class="missing-info">✏️ Doplň údaje</div>' : ''}
                     </div>
                     <div class="cleaning-price">${c.price ? c.price.toLocaleString('cs-CZ') + ' Kč' : '—'}</div>
@@ -515,6 +726,20 @@
                     </div>
                 </div>
             `;
+        }
+
+        // Custom confirm
+        let confirmCallback = null;
+
+        function showConfirm(text, callback) {
+            document.getElementById('confirmText').textContent = text;
+            confirmCallback = callback;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function hideConfirm() {
+            document.getElementById('confirmModal').classList.remove('active');
+            confirmCallback = null;
         }
 
         // Actions
@@ -529,27 +754,32 @@
             document.getElementById('inputDuration').value = c.duration || '';
             document.getElementById('inputPrice').value = c.price || '';
             document.getElementById('inputKm').value = c.km || '';
+            document.getElementById('inputExpenses').value = c.expenses || '';
+            document.getElementById('inputNotes').value = c.notes || '';
             document.getElementById('groupDuration').style.display = 'block';
             document.getElementById('groupPrice').style.display = 'block';
+            document.getElementById('groupExpenses').style.display = 'block';
             document.getElementById('btnSubmit').textContent = 'Uložit';
             document.getElementById('modal').classList.add('active');
         }
 
         function markPaid(id) {
-            const c = cleanings.find(x => x.id === id);
-            if (c) {
-                c.paid = true;
-                save();
-                render();
-            }
+            showConfirm('Opravdu už máš zaplaceno?', function() {
+                const c = cleanings.find(x => x.id === id);
+                if (c) {
+                    c.paid = true;
+                    save();
+                    render();
+                }
+            });
         }
 
         function deleteItem(id) {
-            if (confirm('Opravdu smazat?')) {
+            showConfirm('Opravdu smazat?', function() {
                 cleanings = cleanings.filter(x => x.id !== id);
                 save();
                 render();
-            }
+            });
         }
 
         function openModal(mode) {
@@ -559,12 +789,15 @@
             document.getElementById('inputDuration').value = '';
             document.getElementById('inputPrice').value = '';
             document.getElementById('inputKm').value = '';
+            document.getElementById('inputExpenses').value = '';
+            document.getElementById('inputNotes').value = '';
             
             if (mode === 'plan') {
                 document.getElementById('modalTitle').textContent = '📅 Naplánovat úklid';
                 document.getElementById('btnSubmit').textContent = 'Naplánovat';
                 document.getElementById('groupDuration').style.display = 'none';
                 document.getElementById('groupPrice').style.display = 'none';
+                document.getElementById('groupExpenses').style.display = 'none';
                 // Tomorrow
                 const tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
@@ -574,6 +807,7 @@
                 document.getElementById('btnSubmit').textContent = 'Přidat';
                 document.getElementById('groupDuration').style.display = 'block';
                 document.getElementById('groupPrice').style.display = 'block';
+                document.getElementById('groupExpenses').style.display = 'block';
                 // Today
                 document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
             }
@@ -599,7 +833,9 @@
                 date: date,
                 duration: parseInt(document.getElementById('inputDuration').value) || 0,
                 price: parseInt(document.getElementById('inputPrice').value) || 0,
-                km: parseFloat(document.getElementById('inputKm').value) || 0
+                km: parseFloat(document.getElementById('inputKm').value) || 0,
+                expenses: parseInt(document.getElementById('inputExpenses').value) || 0,
+                notes: document.getElementById('inputNotes').value.trim()
             };
 
             if (currentMode === 'edit' && currentEditId) {
@@ -646,7 +882,33 @@
             }
         });
 
+        document.getElementById('helpToggle').addEventListener('click', function() {
+            document.getElementById('helpContent').classList.toggle('active');
+        });
+
+        document.getElementById('settingsToggle').addEventListener('click', function() {
+            document.getElementById('settingsContent').classList.toggle('active');
+        });
+
+        document.getElementById('inputKmPrice').addEventListener('change', function() {
+            kmPrice = parseFloat(this.value) || 0;
+            save();
+            render();
+        });
+
+        document.getElementById('confirmNo').addEventListener('click', hideConfirm);
+        
+        document.getElementById('confirmYes').addEventListener('click', function() {
+            if (confirmCallback) confirmCallback();
+            hideConfirm();
+        });
+
+        document.getElementById('confirmModal').addEventListener('click', function(e) {
+            if (e.target === this) hideConfirm();
+        });
+
         // Init
+        document.getElementById('inputKmPrice').value = kmPrice;
         render();
     </script>
 </body>
