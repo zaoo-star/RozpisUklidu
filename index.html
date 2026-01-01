@@ -398,6 +398,32 @@
             color: #888;
         }
 
+        .total-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .total-stat {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .total-stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .total-stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
         .footer {
             text-align: center;
             padding: 10px;
@@ -510,6 +536,44 @@
                 <div class="setting-input">
                     <input type="number" id="inputKmPrice" value="7" min="0" step="0.5">
                     <span>Kč</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="help-box">
+        <div class="help-header" id="totalStatsToggle">
+            📊 Celkové statistiky
+        </div>
+        <div class="help-content" id="totalStatsContent">
+            <div class="total-stats-grid">
+                <div class="total-stat">
+                    <span class="total-stat-label">Celkem úklidů</span>
+                    <span class="total-stat-value" id="totalCleanings">0</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-stat-label">Celkem vyděláno</span>
+                    <span class="total-stat-value" id="totalEarned">0 Kč</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-stat-label">Celkem odpracováno</span>
+                    <span class="total-stat-value" id="totalHours">0h</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-stat-label">Celkem najeto</span>
+                    <span class="total-stat-value" id="totalKm">0 km</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-stat-label">Průměr za měsíc</span>
+                    <span class="total-stat-value" id="avgPerMonth">0 Kč</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-stat-label">Průměrná cena za úklid</span>
+                    <span class="total-stat-value" id="avgPrice">0 Kč</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-stat-label">Průměrná doba úklidu</span>
+                    <span class="total-stat-value" id="avgDuration">0 min</span>
                 </div>
             </div>
         </div>
@@ -690,6 +754,9 @@
             document.getElementById('statKmMoney').textContent = totalKmMoney.toLocaleString('cs-CZ') + ' Kč';
             document.getElementById('statProfit').textContent = totalProfit.toLocaleString('cs-CZ') + ' Kč';
 
+            // Total stats (all cleanings including paid)
+            updateTotalStats();
+
             // Add event listeners to cards
             document.querySelectorAll('[data-action]').forEach(btn => {
                 btn.onclick = function() {
@@ -700,6 +767,56 @@
                     if (action === 'delete') deleteItem(id);
                 };
             });
+        }
+
+        function updateTotalStats() {
+            const all = cleanings;
+            const paid = cleanings.filter(c => c.paid);
+            
+            // Celkem úklidů
+            document.getElementById('totalCleanings').textContent = all.length;
+            
+            // Celkem vyděláno (pouze zaplacené)
+            const totalEarned = paid.reduce((s,c) => s + (c.price || 0) - (c.expenses || 0) + Math.round((c.km || 0) * kmPrice), 0);
+            document.getElementById('totalEarned').textContent = totalEarned.toLocaleString('cs-CZ') + ' Kč';
+            
+            // Celkem odpracováno
+            const totalMin = all.reduce((s,c) => s + (c.duration || 0), 0);
+            document.getElementById('totalHours').textContent = formatDuration(totalMin) || '0h';
+            
+            // Celkem najeto
+            const totalKmAll = all.reduce((s,c) => s + (c.km || 0), 0);
+            document.getElementById('totalKm').textContent = totalKmAll + ' km';
+            
+            // Průměr za měsíc
+            if (paid.length > 0) {
+                const dates = paid.map(c => new Date(c.date));
+                const minDate = new Date(Math.min(...dates));
+                const maxDate = new Date(Math.max(...dates));
+                const months = Math.max(1, (maxDate.getFullYear() - minDate.getFullYear()) * 12 + (maxDate.getMonth() - minDate.getMonth()) + 1);
+                const avgMonth = Math.round(totalEarned / months);
+                document.getElementById('avgPerMonth').textContent = avgMonth.toLocaleString('cs-CZ') + ' Kč';
+            } else {
+                document.getElementById('avgPerMonth').textContent = '0 Kč';
+            }
+            
+            // Průměrná cena za úklid
+            const cleaningsWithPrice = all.filter(c => c.price > 0);
+            if (cleaningsWithPrice.length > 0) {
+                const avgPrice = Math.round(cleaningsWithPrice.reduce((s,c) => s + c.price, 0) / cleaningsWithPrice.length);
+                document.getElementById('avgPrice').textContent = avgPrice.toLocaleString('cs-CZ') + ' Kč';
+            } else {
+                document.getElementById('avgPrice').textContent = '0 Kč';
+            }
+            
+            // Průměrná doba úklidu
+            const cleaningsWithDuration = all.filter(c => c.duration > 0);
+            if (cleaningsWithDuration.length > 0) {
+                const avgDur = Math.round(cleaningsWithDuration.reduce((s,c) => s + c.duration, 0) / cleaningsWithDuration.length);
+                document.getElementById('avgDuration').textContent = avgDur + ' min';
+            } else {
+                document.getElementById('avgDuration').textContent = '0 min';
+            }
         }
 
         function cardHTML(c, type) {
@@ -888,6 +1005,10 @@
 
         document.getElementById('settingsToggle').addEventListener('click', function() {
             document.getElementById('settingsContent').classList.toggle('active');
+        });
+
+        document.getElementById('totalStatsToggle').addEventListener('click', function() {
+            document.getElementById('totalStatsContent').classList.toggle('active');
         });
 
         document.getElementById('inputKmPrice').addEventListener('change', function() {
