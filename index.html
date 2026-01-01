@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Moje úklidy</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f0f4f8;
+        min-height: 100vh;
+        padding-bottom: 100px;
+      }
+
+      header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .stats {
+        display: flex;
+        justify-content: space-around;
+        padding: 15px;
+        background: white;
+        margin: 15px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .stat {
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #667eea;
+      }
+
+      .stat-label {
+        font-size: 0.75rem;
+        color: #666;
+        margin-top: 2px;
+      }
+
+      .section-title {
+        padding: 15px 20px 10px;
+        font-size: 0.85rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .cleaning-list {
+        padding: 0 15px;
+      }
+
+      .cleaning-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .cleaning-card:active {
+        transform: scale(0.98);
+      }
+
+      .cleaning-info {
+        flex: 1;
+      }
+
+      .cleaning-address {
+        font-weight: 600;
+        color: #333;
+        font-size: 1rem;
+        margin-bottom: 4px;
+      }
+
+      .cleaning-meta {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .cleaning-date {
+        color: #888;
+        font-size: 0.85rem;
+      }
+
+      .cleaning-km {
+        color: #667eea;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      .cleaning-duration {
+        color: #f59e0b;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      .cleaning-price {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #10b981;
+        margin-left: 15px;
+      }
+
+      .delete-btn {
+        background: #fee2e2;
+        color: #ef4444;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        margin-left: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: background 0.2s;
+      }
+
+      .delete-btn:active {
+        background: #fecaca;
+      }
+
+      .add-btn {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .add-btn:active {
+        transform: scale(0.95);
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 200;
+        align-items: flex-end;
+        justify-content: center;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-content {
+        background: white;
+        width: 100%;
+        max-width: 500px;
+        border-radius: 20px 20px 0 0;
+        padding: 25px;
+        animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #888;
+        cursor: pointer;
+        padding: 5px;
+      }
+
+      .form-row {
+        display: flex;
+        gap: 12px;
+      }
+
+      .form-row .form-group {
+        flex: 1;
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: #555;
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 14px;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .submit-btn {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: opacity 0.2s;
+      }
+
+      .submit-btn:active {
+        opacity: 0.9;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: #888;
+      }
+
+      .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+      }
+
+      .empty-state-text {
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>🧹 Moje úklidy</h1>
+    </header>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="totalCount">0</div>
+        <div class="stat-label">Úklidů</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="totalEarnings">0 Kč</div>
+        <div class="stat-label">Celkem</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="totalHours">0h</div>
+        <div class="stat-label">Odpracováno</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="totalKm">0</div>
+        <div class="stat-label">Km</div>
+      </div>
+    </div>
+
+    <div class="section-title">Nezaplacené úklidy</div>
+    <div class="cleaning-list" id="cleaningList"></div>
+
+    <button class="add-btn" onclick="openModal()">+</button>
+
+    <div class="modal" id="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Nový úklid</h2>
+          <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        <form onsubmit="addCleaning(event)">
+          <div class="form-group">
+            <label for="address">Adresa</label>
+            <input
+              type="text"
+              id="address"
+              placeholder="např. Vodičkova 12, Praha"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="date">Datum</label>
+              <input type="date" id="date" required />
+            </div>
+            <div class="form-group">
+              <label for="duration">Doba (min)</label>
+              <input type="number" id="duration" placeholder="90" min="1" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="price">Cena (Kč)</label>
+              <input
+                type="number"
+                id="price"
+                placeholder="500"
+                required
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label for="km">Doprava (km)</label>
+              <input type="number" id="km" placeholder="0" min="0" step="0.1" />
+            </div>
+          </div>
+          <button type="submit" class="submit-btn">Přidat úklid</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      let cleanings = JSON.parse(localStorage.getItem("cleanings")) || [];
+
+      function saveCleanings() {
+        localStorage.setItem("cleanings", JSON.stringify(cleanings));
+      }
+
+      function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString("cs-CZ", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      }
+
+      function formatDuration(minutes) {
+        if (!minutes) return "";
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        if (h === 0) return `${m} min`;
+        if (m === 0) return `${h} hod`;
+        return `${h}h ${m}m`;
+      }
+
+      function formatPrice(price) {
+        return new Intl.NumberFormat("cs-CZ").format(price) + " Kč";
+      }
+
+      function renderCleanings() {
+        const list = document.getElementById("cleaningList");
+
+        if (cleanings.length === 0) {
+          list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">✨</div>
+                        <div class="empty-state-text">Zatím žádné úklidy.<br>Přidej první kliknutím na +</div>
+                    </div>
+                `;
+        } else {
+          const sorted = [...cleanings].sort(
+            (a, b) => new Date(b.date) - new Date(a.date)
+          );
+          list.innerHTML = sorted
+            .map(
+              (c) => `
+                    <div class="cleaning-card">
+                        <div class="cleaning-info">
+                            <div class="cleaning-address">${c.address}</div>
+                            <div class="cleaning-meta">
+                                <div class="cleaning-date">${formatDate(
+                                  c.date
+                                )}</div>
+                                ${
+                                  c.duration
+                                    ? `<div class="cleaning-duration">⏱ ${formatDuration(
+                                        c.duration
+                                      )}</div>`
+                                    : ""
+                                }
+                                ${
+                                  c.km
+                                    ? `<div class="cleaning-km">🚗 ${c.km} km</div>`
+                                    : ""
+                                }
+                            </div>
+                        </div>
+                        <div class="cleaning-price">${formatPrice(
+                          c.price
+                        )}</div>
+                        <button class="delete-btn" onclick="deleteCleaning('${
+                          c.id
+                        }')" title="Zaplaceno - smazat">✓</button>
+                    </div>
+                `
+            )
+            .join("");
+        }
+
+        updateStats();
+      }
+
+      function updateStats() {
+        const total = cleanings.reduce((sum, c) => sum + c.price, 0);
+        const totalKm = cleanings.reduce((sum, c) => sum + (c.km || 0), 0);
+        const totalMinutes = cleanings.reduce(
+          (sum, c) => sum + (c.duration || 0),
+          0
+        );
+        const totalH = Math.floor(totalMinutes / 60);
+        const totalM = totalMinutes % 60;
+
+        document.getElementById("totalCount").textContent = cleanings.length;
+        document.getElementById("totalEarnings").textContent =
+          formatPrice(total);
+        document.getElementById("totalHours").textContent =
+          totalM > 0 ? `${totalH}h ${totalM}m` : `${totalH}h`;
+        document.getElementById("totalKm").textContent =
+          totalKm % 1 === 0 ? totalKm : totalKm.toFixed(1);
+      }
+
+      function openModal() {
+        document.getElementById("modal").classList.add("active");
+        document.getElementById("date").valueAsDate = new Date();
+        document.getElementById("address").focus();
+      }
+
+      function closeModal() {
+        document.getElementById("modal").classList.remove("active");
+        document.getElementById("address").value = "";
+        document.getElementById("duration").value = "";
+        document.getElementById("price").value = "";
+        document.getElementById("km").value = "";
+      }
+
+      function addCleaning(e) {
+        e.preventDefault();
+
+        const cleaning = {
+          id: Date.now().toString(),
+          address: document.getElementById("address").value,
+          date: document.getElementById("date").value,
+          duration: parseInt(document.getElementById("duration").value) || 0,
+          price: parseInt(document.getElementById("price").value),
+          km: parseFloat(document.getElementById("km").value) || 0,
+        };
+
+        cleanings.push(cleaning);
+        saveCleanings();
+        renderCleanings();
+        closeModal();
+      }
+
+      function deleteCleaning(id) {
+        if (confirm("Označit jako zaplaceno a smazat?")) {
+          cleanings = cleanings.filter((c) => c.id !== id);
+          saveCleanings();
+          renderCleanings();
+        }
+      }
+
+      // Close modal on background click
+      document.getElementById("modal").addEventListener("click", (e) => {
+        if (e.target.id === "modal") {
+          closeModal();
+        }
+      });
+
+      // Initial render
+      renderCleanings();
+    </script>
+  </body>
+</html>
