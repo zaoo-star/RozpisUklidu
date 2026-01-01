@@ -424,6 +424,146 @@
             color: #667eea;
         }
 
+        .setting-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 15px 0;
+        }
+
+        .setting-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .setting-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            background: #667eea;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .setting-btn:active {
+            opacity: 0.8;
+        }
+
+        .client-count {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-left: 5px;
+        }
+
+        .client-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .client-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .client-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .client-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .client-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .client-btn-use {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .client-btn-edit {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .client-btn-delete {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .client-info {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .client-notes {
+            font-size: 0.8rem;
+            color: #888;
+            font-style: italic;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed #ddd;
+        }
+
+        .add-client-btn {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            background: none;
+            color: #888;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .add-client-btn:active {
+            background: #f5f5f5;
+        }
+
+        .address-stat-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .address-stat-header {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .address-stat-info {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .address-stat-value {
+            color: #667eea;
+            font-weight: 500;
+        }
+
         .footer {
             text-align: center;
             padding: 10px;
@@ -523,6 +663,10 @@
             <p><strong>✓</strong> – označit jako zaplaceno → přesune se do historie</p>
             <p><strong>×</strong> – smazat úklid</p>
             <p><strong>Náklady</strong> – čisticí prostředky apod. se odečtou od zisku</p>
+            <p><strong>👤 Klienti</strong> – ulož si stálé klienty s adresou, cenou a poznámkami. Tlačítko ▶ rychle vytvoří úklid s jejich údaji</p>
+            <p><strong>📍 Přehled podle adres</strong> – statistiky kolikrát jsi byla kde a kolik jsi vydělala</p>
+            <p><strong>📤 Uložit zálohu</strong> – stáhne zálohu všech dat do souboru</p>
+            <p><strong>📥 Načíst zálohu</strong> – načte data ze zálohy</p>
         </div>
     </div>
 
@@ -538,6 +682,15 @@
                     <span>Kč</span>
                 </div>
             </div>
+            <div class="setting-divider"></div>
+            <div class="setting-row">
+                <label>Záloha dat:</label>
+                <div class="setting-buttons">
+                    <button class="setting-btn" id="btnExport">📤 Uložit</button>
+                    <button class="setting-btn" id="btnImport">📥 Načíst</button>
+                </div>
+            </div>
+            <input type="file" id="fileImport" accept=".json" style="display:none">
         </div>
     </div>
 
@@ -576,6 +729,25 @@
                     <span class="total-stat-value" id="avgDuration">0 min</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="help-box">
+        <div class="help-header" id="clientsToggle">
+            👤 Klienti <span class="client-count" id="clientCount">0</span>
+        </div>
+        <div class="help-content" id="clientsContent">
+            <div id="clientsList"></div>
+            <button class="add-client-btn" id="btnAddClient">+ Přidat klienta</button>
+        </div>
+    </div>
+
+    <div class="help-box">
+        <div class="help-header" id="addressStatsToggle">
+            📍 Přehled podle adres
+        </div>
+        <div class="help-content" id="addressStatsContent">
+            <div id="addressStatsList"></div>
         </div>
     </div>
 
@@ -643,25 +815,60 @@
         </div>
     </div>
 
+    <div class="modal" id="clientModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="clientModalTitle">Nový klient</h2>
+                <button class="close-btn" id="btnCloseClient">×</button>
+            </div>
+            <div class="form-group">
+                <label>Jméno / Označení</label>
+                <input type="text" id="clientName" placeholder="např. Paní Nováková">
+            </div>
+            <div class="form-group">
+                <label>Adresa</label>
+                <input type="text" id="clientAddress" placeholder="např. Vodičkova 12, Praha">
+            </div>
+            <div class="form-group">
+                <label>Výchozí cena (Kč)</label>
+                <input type="number" id="clientPrice" placeholder="např. 500">
+            </div>
+            <div class="form-group">
+                <label>Vzdálenost (km)</label>
+                <input type="number" id="clientKm" placeholder="např. 5" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>Poznámky</label>
+                <textarea id="clientNotes" placeholder="např. klíče pod rohožkou, alergie na chlor" rows="3"></textarea>
+            </div>
+            <button class="submit-btn" id="btnSaveClient">Uložit klienta</button>
+        </div>
+    </div>
+
     <script>
         // Data
         let cleanings = [];
+        let clients = [];
         let currentMode = null;
         let currentEditId = null;
+        let currentClientId = null;
         let kmPrice = 7;
 
         // Load data
         try {
             cleanings = JSON.parse(localStorage.getItem('cleanings')) || [];
+            clients = JSON.parse(localStorage.getItem('clients')) || [];
             kmPrice = parseFloat(localStorage.getItem('kmPrice')) || 7;
         } catch(e) {
             cleanings = [];
+            clients = [];
             kmPrice = 7;
         }
 
         // Save data
         function save() {
             localStorage.setItem('cleanings', JSON.stringify(cleanings));
+            localStorage.setItem('clients', JSON.stringify(clients));
             localStorage.setItem('kmPrice', kmPrice.toString());
         }
 
@@ -817,6 +1024,89 @@
             } else {
                 document.getElementById('avgDuration').textContent = '0 min';
             }
+            
+            // Render clients
+            renderClients();
+            
+            // Render address stats
+            renderAddressStats();
+        }
+
+        function renderClients() {
+            document.getElementById('clientCount').textContent = clients.length;
+            const list = document.getElementById('clientsList');
+            
+            if (clients.length === 0) {
+                list.innerHTML = '<div style="color:#888;text-align:center;padding:10px">Zatím žádní klienti</div>';
+            } else {
+                list.innerHTML = clients.map(c => `
+                    <div class="client-card">
+                        <div class="client-header">
+                            <div class="client-name">${c.name}</div>
+                            <div class="client-actions">
+                                <button class="client-btn client-btn-use" data-client-action="use" data-client-id="${c.id}" title="Použít">▶</button>
+                                <button class="client-btn client-btn-edit" data-client-action="edit" data-client-id="${c.id}" title="Upravit">✏️</button>
+                                <button class="client-btn client-btn-delete" data-client-action="delete" data-client-id="${c.id}" title="Smazat">×</button>
+                            </div>
+                        </div>
+                        <div class="client-info">
+                            📍 ${c.address}
+                            ${c.price ? ' • 💰 ' + c.price + ' Kč' : ''}
+                            ${c.km ? ' • 🚗 ' + c.km + ' km' : ''}
+                        </div>
+                        ${c.notes ? '<div class="client-notes">📝 ' + c.notes + '</div>' : ''}
+                    </div>
+                `).join('');
+                
+                // Event listeners pro klienty
+                document.querySelectorAll('[data-client-action]').forEach(btn => {
+                    btn.onclick = function() {
+                        const action = this.dataset.clientAction;
+                        const id = this.dataset.clientId;
+                        if (action === 'use') useClient(id);
+                        if (action === 'edit') editClient(id);
+                        if (action === 'delete') deleteClient(id);
+                    };
+                });
+            }
+        }
+
+        function renderAddressStats() {
+            const list = document.getElementById('addressStatsList');
+            
+            // Seskupit podle adresy
+            const addressMap = {};
+            cleanings.forEach(c => {
+                const addr = c.address.toLowerCase().trim();
+                if (!addressMap[addr]) {
+                    addressMap[addr] = {
+                        address: c.address,
+                        count: 0,
+                        total: 0,
+                        totalTime: 0
+                    };
+                }
+                addressMap[addr].count++;
+                addressMap[addr].total += (c.price || 0) - (c.expenses || 0) + Math.round((c.km || 0) * kmPrice);
+                addressMap[addr].totalTime += c.duration || 0;
+            });
+            
+            const addresses = Object.values(addressMap).sort((a,b) => b.count - a.count);
+            
+            if (addresses.length === 0) {
+                list.innerHTML = '<div style="color:#888;text-align:center;padding:10px">Zatím žádné úklidy</div>';
+            } else {
+                list.innerHTML = addresses.map(a => `
+                    <div class="address-stat-card">
+                        <div class="address-stat-header">${a.address}</div>
+                        <div class="address-stat-info">
+                            <span><span class="address-stat-value">${a.count}×</span> úklid</span>
+                            <span><span class="address-stat-value">${a.total.toLocaleString('cs-CZ')} Kč</span> celkem</span>
+                            <span><span class="address-stat-value">${formatDuration(a.totalTime)}</span></span>
+                        </div>
+                    </div>
+                `).join('');
+            }
         }
 
         function cardHTML(c, type) {
@@ -857,6 +1147,127 @@
         function hideConfirm() {
             document.getElementById('confirmModal').classList.remove('active');
             confirmCallback = null;
+        }
+
+        // Client functions
+        function openClientModal(id = null) {
+            currentClientId = id;
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientAddress').value = '';
+            document.getElementById('clientPrice').value = '';
+            document.getElementById('clientKm').value = '';
+            document.getElementById('clientNotes').value = '';
+            
+            if (id) {
+                const c = clients.find(x => x.id === id);
+                if (c) {
+                    document.getElementById('clientModalTitle').textContent = 'Upravit klienta';
+                    document.getElementById('clientName').value = c.name;
+                    document.getElementById('clientAddress').value = c.address;
+                    document.getElementById('clientPrice').value = c.price || '';
+                    document.getElementById('clientKm').value = c.km || '';
+                    document.getElementById('clientNotes').value = c.notes || '';
+                }
+            } else {
+                document.getElementById('clientModalTitle').textContent = 'Nový klient';
+            }
+            
+            document.getElementById('clientModal').classList.add('active');
+        }
+
+        function closeClientModal() {
+            document.getElementById('clientModal').classList.remove('active');
+            currentClientId = null;
+        }
+
+        function saveClient() {
+            const name = document.getElementById('clientName').value.trim();
+            const address = document.getElementById('clientAddress').value.trim();
+            
+            if (!name || !address) {
+                showConfirm('Vyplň jméno a adresu', function(){});
+                return;
+            }
+            
+            const data = {
+                name: name,
+                address: address,
+                price: parseInt(document.getElementById('clientPrice').value) || 0,
+                km: parseFloat(document.getElementById('clientKm').value) || 0,
+                notes: document.getElementById('clientNotes').value.trim()
+            };
+            
+            if (currentClientId) {
+                const c = clients.find(x => x.id === currentClientId);
+                if (c) Object.assign(c, data);
+            } else {
+                clients.push({
+                    id: Date.now().toString(),
+                    ...data
+                });
+            }
+            
+            save();
+            render();
+            closeClientModal();
+        }
+
+        function editClient(id) {
+            openClientModal(id);
+        }
+
+        function deleteClient(id) {
+            showConfirm('Smazat klienta?', function() {
+                clients = clients.filter(x => x.id !== id);
+                save();
+                render();
+            });
+        }
+
+        function useClient(id) {
+            const c = clients.find(x => x.id === id);
+            if (c) {
+                openModal('done');
+                document.getElementById('inputAddress').value = c.address;
+                document.getElementById('inputPrice').value = c.price || '';
+                document.getElementById('inputKm').value = c.km || '';
+            }
+        }
+
+        // Export/Import
+        function exportData() {
+            const data = {
+                cleanings: cleanings,
+                clients: clients,
+                kmPrice: kmPrice,
+                exportDate: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'uklidy_zaloha_' + new Date().toISOString().split('T')[0] + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.cleanings) cleanings = data.cleanings;
+                    if (data.clients) clients = data.clients;
+                    if (data.kmPrice) kmPrice = data.kmPrice;
+                    save();
+                    document.getElementById('inputKmPrice').value = kmPrice;
+                    render();
+                    showConfirm('Data úspěšně importována!', function(){});
+                } catch(err) {
+                    showConfirm('Chyba při importu souboru', function(){});
+                }
+            };
+            reader.readAsText(file);
         }
 
         // Actions
@@ -1009,6 +1420,38 @@
 
         document.getElementById('totalStatsToggle').addEventListener('click', function() {
             document.getElementById('totalStatsContent').classList.toggle('active');
+        });
+
+        document.getElementById('clientsToggle').addEventListener('click', function() {
+            document.getElementById('clientsContent').classList.toggle('active');
+        });
+
+        document.getElementById('addressStatsToggle').addEventListener('click', function() {
+            document.getElementById('addressStatsContent').classList.toggle('active');
+        });
+
+        document.getElementById('btnAddClient').addEventListener('click', function() {
+            openClientModal();
+        });
+
+        document.getElementById('btnCloseClient').addEventListener('click', closeClientModal);
+        document.getElementById('btnSaveClient').addEventListener('click', saveClient);
+
+        document.getElementById('clientModal').addEventListener('click', function(e) {
+            if (e.target === this) closeClientModal();
+        });
+
+        document.getElementById('btnExport').addEventListener('click', exportData);
+        
+        document.getElementById('btnImport').addEventListener('click', function() {
+            document.getElementById('fileImport').click();
+        });
+
+        document.getElementById('fileImport').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                importData(e.target.files[0]);
+                e.target.value = '';
+            }
         });
 
         document.getElementById('inputKmPrice').addEventListener('change', function() {
