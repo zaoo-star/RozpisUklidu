@@ -953,7 +953,7 @@
             const totalExpenses = unpaid.reduce((s,c) => s + (c.expenses || 0), 0);
             const totalKm = unpaid.reduce((s,c) => s + (c.km || 0), 0);
             const totalKmMoney = Math.round(totalKm * kmPrice);
-            const totalProfit = totalMoney - totalExpenses + totalKmMoney;
+            const totalProfit = totalMoney + totalKmMoney;
             
             document.getElementById('statCount').textContent = unpaid.length;
             document.getElementById('statMoney').textContent = totalMoney.toLocaleString('cs-CZ') + ' Kč';
@@ -984,7 +984,7 @@
             document.getElementById('totalCleanings').textContent = all.length;
             
             // Celkem vyděláno (pouze zaplacené)
-            const totalEarned = paid.reduce((s,c) => s + (c.price || 0) - (c.expenses || 0) + Math.round((c.km || 0) * kmPrice), 0);
+            const totalEarned = paid.reduce((s,c) => s + (c.price || 0) + Math.round((c.km || 0) * kmPrice), 0);
             document.getElementById('totalEarned').textContent = totalEarned.toLocaleString('cs-CZ') + ' Kč';
             
             // Celkem odpracováno
@@ -1087,7 +1087,7 @@
                     };
                 }
                 addressMap[addr].count++;
-                addressMap[addr].total += (c.price || 0) - (c.expenses || 0) + Math.round((c.km || 0) * kmPrice);
+                addressMap[addr].total += (c.price || 0) + Math.round((c.km || 0) * kmPrice);
                 addressMap[addr].totalTime += c.duration || 0;
             });
             
