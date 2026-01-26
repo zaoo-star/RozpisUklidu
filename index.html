@@ -607,6 +607,28 @@
             background: #10b981;
             color: white;
         }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #333;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 1rem;
+            z-index: 300;
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+            text-align: center;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -767,6 +789,8 @@
 
     <div class="footer">Vytvořil Zaoo</div>
 
+    <div class="toast" id="toast"></div>
+
     <div class="modal" id="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -834,6 +858,10 @@
                 <input type="number" id="clientPrice" placeholder="např. 500">
             </div>
             <div class="form-group">
+                <label>Výchozí doba (min)</label>
+                <input type="number" id="clientDuration" placeholder="např. 90">
+            </div>
+            <div class="form-group">
                 <label>Vzdálenost (km)</label>
                 <input type="number" id="clientKm" placeholder="např. 5" step="0.1">
             </div>
@@ -870,6 +898,49 @@
             localStorage.setItem('cleanings', JSON.stringify(cleanings));
             localStorage.setItem('clients', JSON.stringify(clients));
             localStorage.setItem('kmPrice', kmPrice.toString());
+        }
+
+        // Toast notifikace
+        const toastMessages = {
+            paid: [
+                "No konečně! 🙄",
+                "Div světa, zaplatili!",
+                "Tak to teda trvalo...",
+                "Dluh splacen. Prozatím. 🤝",
+                "Peníze v kapse! 💰",
+                "Mise splněna. ✔️",
+                "Odvedeno do pokladny 👑"
+            ],
+            added: [
+                "Další do sbírky! 🧹",
+                "Nová zakázka přijata 📋",
+                "Práce volá... zase 😅",
+                "Špína nemá šanci!",
+                "Další oběť čistoty 🎯"
+            ],
+            deleted: [
+                "Hotovo, zapomenuto 👋",
+                "Případ uzavřen 📁",
+                "Smazáno z historie ✨",
+                "Jako by to nikdy nebylo..."
+            ],
+            planned: [
+                "Zapsáno, nezapomenu! 📅",
+                "Další mise naplánována 🎯",
+                "Kalendář se plní...",
+                "Ještě si užij volno 😎"
+            ]
+        };
+
+        function showToast(type) {
+            const messages = toastMessages[type];
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
         }
 
         // Format helpers
@@ -1052,6 +1123,7 @@
                         <div class="client-info">
                             📍 ${c.address}
                             ${c.price ? ' • 💰 ' + c.price + ' Kč' : ''}
+                            ${c.duration ? ' • ⏱ ' + c.duration + ' min' : ''}
                             ${c.km ? ' • 🚗 ' + c.km + ' km' : ''}
                         </div>
                         ${c.notes ? '<div class="client-notes">📝 ' + c.notes + '</div>' : ''}
@@ -1155,6 +1227,7 @@
             document.getElementById('clientName').value = '';
             document.getElementById('clientAddress').value = '';
             document.getElementById('clientPrice').value = '';
+            document.getElementById('clientDuration').value = '';
             document.getElementById('clientKm').value = '';
             document.getElementById('clientNotes').value = '';
             
@@ -1165,6 +1238,7 @@
                     document.getElementById('clientName').value = c.name;
                     document.getElementById('clientAddress').value = c.address;
                     document.getElementById('clientPrice').value = c.price || '';
+                    document.getElementById('clientDuration').value = c.duration || '';
                     document.getElementById('clientKm').value = c.km || '';
                     document.getElementById('clientNotes').value = c.notes || '';
                 }
@@ -1193,6 +1267,7 @@
                 name: name,
                 address: address,
                 price: parseInt(document.getElementById('clientPrice').value) || 0,
+                duration: parseInt(document.getElementById('clientDuration').value) || 0,
                 km: parseFloat(document.getElementById('clientKm').value) || 0,
                 notes: document.getElementById('clientNotes').value.trim()
             };
@@ -1230,6 +1305,7 @@
                 openModal('done');
                 document.getElementById('inputAddress').value = c.address;
                 document.getElementById('inputPrice').value = c.price || '';
+                document.getElementById('inputDuration').value = c.duration || '';
                 document.getElementById('inputKm').value = c.km || '';
             }
         }
@@ -1298,6 +1374,7 @@
                     c.paid = true;
                     save();
                     render();
+                    showToast('paid');
                 }
             });
         }
@@ -1307,6 +1384,7 @@
                 cleanings = cleanings.filter(x => x.id !== id);
                 save();
                 render();
+                showToast('deleted');
             });
         }
 
@@ -1375,6 +1453,12 @@
                     ...data,
                     paid: false
                 });
+                // Toast podle typu
+                if (currentMode === 'plan') {
+                    showToast('planned');
+                } else {
+                    showToast('added');
+                }
             }
 
             save();
