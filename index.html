@@ -267,16 +267,17 @@
             font-weight: 500;
         }
 
-        .form-group input, .form-group textarea {
+        .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
             font-size: 1rem;
             font-family: inherit;
+            background: white;
         }
 
-        .form-group input:focus, .form-group textarea:focus {
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -796,6 +797,12 @@
             <div class="modal-header">
                 <h2 class="modal-title" id="modalTitle">Nový úklid</h2>
                 <button class="close-btn" id="btnClose">×</button>
+            </div>
+            <div class="form-group" id="groupClient">
+                <label>Klient</label>
+                <select id="inputClient">
+                    <option value="">-- Vybrat klienta --</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Adresa</label>
@@ -1363,6 +1370,7 @@
             document.getElementById('groupDuration').style.display = 'block';
             document.getElementById('groupPrice').style.display = 'block';
             document.getElementById('groupExpenses').style.display = 'block';
+            document.getElementById('groupClient').style.display = 'none';
             document.getElementById('btnSubmit').textContent = 'Uložit';
             document.getElementById('modal').classList.add('active');
         }
@@ -1391,6 +1399,7 @@
         function openModal(mode) {
             currentMode = mode;
             currentEditId = null;
+            document.getElementById('inputClient').value = '';
             document.getElementById('inputAddress').value = '';
             document.getElementById('inputDuration').value = '';
             document.getElementById('inputPrice').value = '';
@@ -1398,12 +1407,18 @@
             document.getElementById('inputExpenses').value = '';
             document.getElementById('inputNotes').value = '';
             
+            // Naplnit select klienty
+            const select = document.getElementById('inputClient');
+            select.innerHTML = '<option value="">-- Vybrat klienta --</option>' + 
+                clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            
             if (mode === 'plan') {
                 document.getElementById('modalTitle').textContent = '📅 Naplánovat úklid';
                 document.getElementById('btnSubmit').textContent = 'Naplánovat';
                 document.getElementById('groupDuration').style.display = 'none';
                 document.getElementById('groupPrice').style.display = 'none';
                 document.getElementById('groupExpenses').style.display = 'none';
+                document.getElementById('groupClient').style.display = 'block';
                 // Tomorrow
                 const tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1414,6 +1429,7 @@
                 document.getElementById('groupDuration').style.display = 'block';
                 document.getElementById('groupPrice').style.display = 'block';
                 document.getElementById('groupExpenses').style.display = 'block';
+                document.getElementById('groupClient').style.display = 'block';
                 // Today
                 document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
             }
@@ -1476,6 +1492,19 @@
         });
 
         document.getElementById('btnClose').addEventListener('click', closeModal);
+
+        document.getElementById('inputClient').addEventListener('change', function() {
+            const clientId = this.value;
+            if (clientId) {
+                const c = clients.find(x => x.id === clientId);
+                if (c) {
+                    document.getElementById('inputAddress').value = c.address;
+                    document.getElementById('inputPrice').value = c.price || '';
+                    document.getElementById('inputDuration').value = c.duration || '';
+                    document.getElementById('inputKm').value = c.km || '';
+                }
+            }
+        });
 
         document.getElementById('btnSubmit').addEventListener('click', submitForm);
 
