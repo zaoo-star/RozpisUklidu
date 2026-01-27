@@ -525,7 +525,8 @@
         }
 
         .add-client-btn {
-            width: 100%;
+            width: calc(100% - 30px);
+            margin: 0 15px 15px;
             padding: 12px;
             border: 2px dashed #ccc;
             border-radius: 10px;
@@ -533,7 +534,6 @@
             color: #888;
             font-size: 0.9rem;
             cursor: pointer;
-            margin-top: 5px;
         }
 
         .add-client-btn:active {
@@ -761,8 +761,8 @@
         </div>
         <div class="help-content" id="clientsContent">
             <div id="clientsList"></div>
-            <button class="add-client-btn" id="btnAddClient">+ Přidat klienta</button>
         </div>
+        <button class="add-client-btn" id="btnAddClient">+ Přidat klienta</button>
     </div>
 
     <div class="help-box">
