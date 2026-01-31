@@ -812,6 +812,10 @@
                 <label>Datum</label>
                 <input type="date" id="inputDate">
             </div>
+            <div class="form-group" id="groupTime">
+                <label>Čas příchodu</label>
+                <input type="time" id="inputTime">
+            </div>
             <div class="form-group" id="groupDuration">
                 <label>Doba (min)</label>
                 <input type="number" id="inputDuration" placeholder="např. 90">
@@ -867,6 +871,10 @@
             <div class="form-group">
                 <label>Výchozí doba (min)</label>
                 <input type="number" id="clientDuration" placeholder="např. 90">
+            </div>
+            <div class="form-group">
+                <label>Výchozí čas příchodu</label>
+                <input type="time" id="clientTime">
             </div>
             <div class="form-group">
                 <label>Vzdálenost (km)</label>
@@ -1131,6 +1139,7 @@
                             📍 ${c.address}
                             ${c.price ? ' • 💰 ' + c.price + ' Kč' : ''}
                             ${c.duration ? ' • ⏱ ' + c.duration + ' min' : ''}
+                            ${c.time ? ' • 🕐 ' + c.time : ''}
                             ${c.km ? ' • 🚗 ' + c.km + ' km' : ''}
                         </div>
                         ${c.notes ? '<div class="client-notes">📝 ' + c.notes + '</div>' : ''}
@@ -1196,7 +1205,7 @@
                     <div class="cleaning-info">
                         <div class="cleaning-address">${c.address}</div>
                         <div class="cleaning-meta">
-                            <span>${formatDate(c.date)}</span>
+                            <span>${formatDate(c.date)}${c.time ? ' v ' + c.time : ''}</span>
                             ${c.duration ? '<span>⏱ ' + formatDuration(c.duration) + '</span>' : ''}
                             ${c.km ? '<span>🚗 ' + c.km + ' km</span>' : ''}
                             ${c.expenses ? '<span>💸 -' + c.expenses + ' Kč</span>' : ''}
@@ -1235,6 +1244,7 @@
             document.getElementById('clientAddress').value = '';
             document.getElementById('clientPrice').value = '';
             document.getElementById('clientDuration').value = '';
+            document.getElementById('clientTime').value = '';
             document.getElementById('clientKm').value = '';
             document.getElementById('clientNotes').value = '';
             
@@ -1246,6 +1256,7 @@
                     document.getElementById('clientAddress').value = c.address;
                     document.getElementById('clientPrice').value = c.price || '';
                     document.getElementById('clientDuration').value = c.duration || '';
+                    document.getElementById('clientTime').value = c.time || '';
                     document.getElementById('clientKm').value = c.km || '';
                     document.getElementById('clientNotes').value = c.notes || '';
                 }
@@ -1275,6 +1286,7 @@
                 address: address,
                 price: parseInt(document.getElementById('clientPrice').value) || 0,
                 duration: parseInt(document.getElementById('clientDuration').value) || 0,
+                time: document.getElementById('clientTime').value || '',
                 km: parseFloat(document.getElementById('clientKm').value) || 0,
                 notes: document.getElementById('clientNotes').value.trim()
             };
@@ -1313,6 +1325,7 @@
                 document.getElementById('inputAddress').value = c.address;
                 document.getElementById('inputPrice').value = c.price || '';
                 document.getElementById('inputDuration').value = c.duration || '';
+                document.getElementById('inputTime').value = c.time || '';
                 document.getElementById('inputKm').value = c.km || '';
             }
         }
@@ -1362,6 +1375,7 @@
             document.getElementById('modalTitle').textContent = 'Upravit úklid';
             document.getElementById('inputAddress').value = c.address;
             document.getElementById('inputDate').value = c.date;
+            document.getElementById('inputTime').value = c.time || '';
             document.getElementById('inputDuration').value = c.duration || '';
             document.getElementById('inputPrice').value = c.price || '';
             document.getElementById('inputKm').value = c.km || '';
@@ -1371,6 +1385,7 @@
             document.getElementById('groupPrice').style.display = 'block';
             document.getElementById('groupExpenses').style.display = 'block';
             document.getElementById('groupClient').style.display = 'none';
+            document.getElementById('groupTime').style.display = 'block';
             document.getElementById('btnSubmit').textContent = 'Uložit';
             document.getElementById('modal').classList.add('active');
         }
@@ -1401,6 +1416,7 @@
             currentEditId = null;
             document.getElementById('inputClient').value = '';
             document.getElementById('inputAddress').value = '';
+            document.getElementById('inputTime').value = '';
             document.getElementById('inputDuration').value = '';
             document.getElementById('inputPrice').value = '';
             document.getElementById('inputKm').value = '';
@@ -1419,6 +1435,7 @@
                 document.getElementById('groupPrice').style.display = 'none';
                 document.getElementById('groupExpenses').style.display = 'none';
                 document.getElementById('groupClient').style.display = 'block';
+                document.getElementById('groupTime').style.display = 'block';
                 // Tomorrow
                 const tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1430,6 +1447,7 @@
                 document.getElementById('groupPrice').style.display = 'block';
                 document.getElementById('groupExpenses').style.display = 'block';
                 document.getElementById('groupClient').style.display = 'block';
+                document.getElementById('groupTime').style.display = 'block';
                 // Today
                 document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
             }
@@ -1453,6 +1471,7 @@
             const data = {
                 address: address,
                 date: date,
+                time: document.getElementById('inputTime').value || '',
                 duration: parseInt(document.getElementById('inputDuration').value) || 0,
                 price: parseInt(document.getElementById('inputPrice').value) || 0,
                 km: parseFloat(document.getElementById('inputKm').value) || 0,
@@ -1501,6 +1520,7 @@
                     document.getElementById('inputAddress').value = c.address;
                     document.getElementById('inputPrice').value = c.price || '';
                     document.getElementById('inputDuration').value = c.duration || '';
+                    document.getElementById('inputTime').value = c.time || '';
                     document.getElementById('inputKm').value = c.km || '';
                 }
             }
