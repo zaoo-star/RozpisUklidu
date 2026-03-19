@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Moje úklidy</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -889,6 +891,20 @@
     </div>
 
     <script>
+        // Firebase konfigurace
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmt3FIIQ1A-3KTPk25YkiBiGZ6IBDE7Uo",
+            authDomain: "evidence-uklidu.firebaseapp.com",
+            databaseURL: "https://evidence-uklidu-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "evidence-uklidu",
+            storageBucket: "evidence-uklidu.firebasestorage.app",
+            messagingSenderId: "761990783986",
+            appId: "1:761990783986:web:4c99bb86b5330016af816b"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         // Data
         let cleanings = [];
         let clients = [];
@@ -896,23 +912,54 @@
         let currentEditId = null;
         let currentClientId = null;
         let kmPrice = 7;
+        let dataLoaded = false;
 
-        // Load data
-        try {
-            cleanings = JSON.parse(localStorage.getItem('cleanings')) || [];
-            clients = JSON.parse(localStorage.getItem('clients')) || [];
-            kmPrice = parseFloat(localStorage.getItem('kmPrice')) || 7;
-        } catch(e) {
-            cleanings = [];
-            clients = [];
-            kmPrice = 7;
+        // Load data from Firebase
+        function loadData() {
+            db.ref('data').once('value').then(snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    cleanings = data.cleanings || [];
+                    clients = data.clients || [];
+                    kmPrice = data.kmPrice || 7;
+                    document.getElementById('inputKmPrice').value = kmPrice;
+                }
+                dataLoaded = true;
+                render();
+                showToast('loaded');
+            }).catch(err => {
+                console.error('Chyba při načítání:', err);
+                // Fallback na localStorage
+                try {
+                    cleanings = JSON.parse(localStorage.getItem('cleanings')) || [];
+                    clients = JSON.parse(localStorage.getItem('clients')) || [];
+                    kmPrice = parseFloat(localStorage.getItem('kmPrice')) || 7;
+                } catch(e) {
+                    cleanings = [];
+                    clients = [];
+                    kmPrice = 7;
+                }
+                dataLoaded = true;
+                render();
+            });
         }
 
-        // Save data
+        // Save data to Firebase
         function save() {
+            // Uložit do localStorage jako zálohu
             localStorage.setItem('cleanings', JSON.stringify(cleanings));
             localStorage.setItem('clients', JSON.stringify(clients));
             localStorage.setItem('kmPrice', kmPrice.toString());
+            
+            // Uložit do Firebase
+            db.ref('data').set({
+                cleanings: cleanings,
+                clients: clients,
+                kmPrice: kmPrice,
+                lastUpdate: new Date().toISOString()
+            }).catch(err => {
+                console.error('Chyba při ukládání:', err);
+            });
         }
 
         // Toast notifikace
@@ -944,6 +991,11 @@
                 "Další mise naplánována 🎯",
                 "Kalendář se plní...",
                 "Ještě si užij volno 😎"
+            ],
+            loaded: [
+                "Data načtena z cloudu ☁️",
+                "Připojeno k databázi ✓",
+                "Synchronizováno! 🔄"
             ]
         };
 
@@ -1606,7 +1658,7 @@
 
         // Init
         document.getElementById('inputKmPrice').value = kmPrice;
-        render();
+        loadData();
     </script>
 </body>
 </html>
