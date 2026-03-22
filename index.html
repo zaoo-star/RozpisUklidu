@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Moje úklidy</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         * {
@@ -575,6 +576,114 @@
             margin-bottom: 70px;
         }
 
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 90%;
+            width: 320px;
+        }
+
+        .login-title {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .login-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .login-btn:hover {
+            background: #f5f5f5;
+            border-color: #ccc;
+        }
+
+        .login-btn img {
+            width: 20px;
+            height: 20px;
+        }
+
+        .user-bar {
+            background: white;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .logout-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.8rem;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .logout-btn:active {
+            background: #f5f5f5;
+        }
+
+        .app-content {
+            display: none;
+        }
+
+        .app-content.visible {
+            display: block;
+        }
+
         .confirm-content {
             text-align: center;
             padding: 30px 25px;
@@ -635,11 +744,34 @@
     </style>
 </head>
 <body>
-    <header>
-        <h1>🧹 Moje úklidy</h1>
-    </header>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <div class="login-title">🧹 Moje úklidy</div>
+            <div class="login-subtitle">Přihlas se pro synchronizaci dat</div>
+            <button class="login-btn" id="btnLogin">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Přihlásit přes Google
+            </button>
+        </div>
+    </div>
 
-    <div class="stats">
+    <!-- App Content -->
+    <div class="app-content" id="appContent">
+        <!-- User Bar -->
+        <div class="user-bar">
+            <div class="user-info">
+                <img class="user-avatar" id="userAvatar" src="" alt="">
+                <span class="user-name" id="userName"></span>
+            </div>
+            <button class="logout-btn" id="btnLogout">Odhlásit</button>
+        </div>
+
+        <header>
+            <h1>🧹 Moje úklidy</h1>
+        </header>
+
+        <div class="stats">
         <div class="stat">
             <div class="stat-value" id="statCount">0</div>
             <div class="stat-label">K zaplacení</div>
@@ -791,6 +923,7 @@
     </div>
 
     <div class="footer">Vytvořil Zaoo</div>
+    </div> <!-- /app-content -->
 
     <div class="toast" id="toast"></div>
 
@@ -904,6 +1037,8 @@
         
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const auth = firebase.auth();
+        let currentUser = null;
 
         // Data
         let cleanings = [];
@@ -914,45 +1049,128 @@
         let kmPrice = 7;
         let dataLoaded = false;
 
-        // Load data from Firebase
+        // Auth state listener
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appContent').classList.add('visible');
+                document.getElementById('userAvatar').src = user.photoURL || '';
+                document.getElementById('userName').textContent = user.displayName || user.email;
+                loadData();
+            } else {
+                currentUser = null;
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('appContent').classList.remove('visible');
+            }
+        });
+
+        // Login
+        document.getElementById('btnLogin').addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(err => {
+                console.error('Chyba přihlášení:', err);
+                alert('Chyba přihlášení: ' + err.message);
+            });
+        });
+
+        // Logout
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // Load data from Firebase (user specific)
         function loadData() {
-            db.ref('data').once('value').then(snapshot => {
+            if (!currentUser) return;
+            
+            // Nejdřív načti lokální data
+            let localCleanings = [];
+            let localClients = [];
+            let localKmPrice = 7;
+            try {
+                localCleanings = JSON.parse(localStorage.getItem('cleanings')) || [];
+                localClients = JSON.parse(localStorage.getItem('clients')) || [];
+                localKmPrice = parseFloat(localStorage.getItem('kmPrice')) || 7;
+            } catch(e) {}
+            
+            db.ref('users/' + currentUser.uid).once('value').then(snapshot => {
                 const data = snapshot.val();
-                if (data) {
-                    cleanings = data.cleanings || [];
-                    clients = data.clients || [];
-                    kmPrice = data.kmPrice || 7;
-                    document.getElementById('inputKmPrice').value = kmPrice;
+                
+                if (data && data.cleanings && data.cleanings.length > 0) {
+                    // V cloudu jsou data
+                    if (localCleanings.length > 0) {
+                        // Lokálně jsou taky data - nabídni sloučení
+                        showConfirm('Máš ' + localCleanings.length + ' lokálních úklidů a ' + data.cleanings.length + ' v cloudu. Sloučit?', function() {
+                            // Sloučit - přidat lokální které ještě nejsou v cloudu
+                            const cloudIds = data.cleanings.map(c => c.id);
+                            const newLocal = localCleanings.filter(c => !cloudIds.includes(c.id));
+                            cleanings = [...data.cleanings, ...newLocal];
+                            
+                            const cloudClientIds = (data.clients || []).map(c => c.id);
+                            const newLocalClients = localClients.filter(c => !cloudClientIds.includes(c.id));
+                            clients = [...(data.clients || []), ...newLocalClients];
+                            
+                            kmPrice = data.kmPrice || localKmPrice;
+                            document.getElementById('inputKmPrice').value = kmPrice;
+                            dataLoaded = true;
+                            save();
+                            render();
+                            showToast('loaded');
+                        });
+                        // Pokud odmítne, použij cloud data
+                        cleanings = data.cleanings;
+                        clients = data.clients || [];
+                        kmPrice = data.kmPrice || 7;
+                    } else {
+                        // Lokálně nic není, použij cloud
+                        cleanings = data.cleanings;
+                        clients = data.clients || [];
+                        kmPrice = data.kmPrice || 7;
+                    }
+                } else {
+                    // V cloudu nic není
+                    if (localCleanings.length > 0) {
+                        // Nahraj lokální data do cloudu
+                        cleanings = localCleanings;
+                        clients = localClients;
+                        kmPrice = localKmPrice;
+                        save(); // Uloží do cloudu
+                        showToast('added');
+                    }
                 }
+                
+                document.getElementById('inputKmPrice').value = kmPrice;
                 dataLoaded = true;
                 render();
-                showToast('loaded');
+                if (!data || !data.cleanings || data.cleanings.length === 0) {
+                    if (localCleanings.length > 0) {
+                        showToast('loaded');
+                    }
+                } else {
+                    showToast('loaded');
+                }
             }).catch(err => {
                 console.error('Chyba při načítání:', err);
-                // Fallback na localStorage
-                try {
-                    cleanings = JSON.parse(localStorage.getItem('cleanings')) || [];
-                    clients = JSON.parse(localStorage.getItem('clients')) || [];
-                    kmPrice = parseFloat(localStorage.getItem('kmPrice')) || 7;
-                } catch(e) {
-                    cleanings = [];
-                    clients = [];
-                    kmPrice = 7;
-                }
+                // Použij lokální data
+                cleanings = localCleanings;
+                clients = localClients;
+                kmPrice = localKmPrice;
                 dataLoaded = true;
                 render();
             });
         }
 
-        // Save data to Firebase
+        // Save data to Firebase (user specific)
         function save() {
+            if (!currentUser) return;
+            
             // Uložit do localStorage jako zálohu
             localStorage.setItem('cleanings', JSON.stringify(cleanings));
             localStorage.setItem('clients', JSON.stringify(clients));
             localStorage.setItem('kmPrice', kmPrice.toString());
             
-            // Uložit do Firebase
-            db.ref('data').set({
+            // Uložit do Firebase pod uživatele
+            db.ref('users/' + currentUser.uid).set({
                 cleanings: cleanings,
                 clients: clients,
                 kmPrice: kmPrice,
@@ -1656,9 +1874,8 @@
             if (e.target === this) hideConfirm();
         });
 
-        // Init
+        // Init - auth listener načte data po přihlášení
         document.getElementById('inputKmPrice').value = kmPrice;
-        loadData();
     </script>
 </body>
 </html>
