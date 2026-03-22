@@ -676,6 +676,35 @@
             background: #f5f5f5;
         }
 
+        .sync-indicator {
+            position: fixed;
+            top: 60px;
+            right: 15px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 200;
+        }
+
+        .sync-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .sync-indicator.saving .sync-icon {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
         .app-content {
             display: none;
         }
@@ -925,6 +954,10 @@
     <div class="footer">Vytvořil Zaoo</div>
     </div> <!-- /app-content -->
 
+    <div class="sync-indicator" id="syncIndicator">
+        <span class="sync-icon">🔄</span> <span class="sync-text">Ukládám...</span>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <div class="modal" id="modal">
@@ -1160,9 +1193,36 @@
             });
         }
 
+        // Sync indikátor
+        function showSync(saving = true) {
+            const indicator = document.getElementById('syncIndicator');
+            const icon = indicator.querySelector('.sync-icon');
+            const text = indicator.querySelector('.sync-text');
+            
+            if (saving) {
+                icon.textContent = '🔄';
+                text.textContent = 'Ukládám...';
+                indicator.classList.add('saving');
+            } else {
+                icon.textContent = '☁️';
+                text.textContent = 'Uloženo';
+                indicator.classList.remove('saving');
+            }
+            
+            indicator.classList.add('show');
+            
+            if (!saving) {
+                setTimeout(() => {
+                    indicator.classList.remove('show');
+                }, 1500);
+            }
+        }
+
         // Save data to Firebase (user specific)
         function save() {
             if (!currentUser) return;
+            
+            showSync(true);
             
             // Uložit do localStorage jako zálohu
             localStorage.setItem('cleanings', JSON.stringify(cleanings));
@@ -1175,8 +1235,11 @@
                 clients: clients,
                 kmPrice: kmPrice,
                 lastUpdate: new Date().toISOString()
+            }).then(() => {
+                showSync(false);
             }).catch(err => {
                 console.error('Chyba při ukládání:', err);
+                document.getElementById('syncIndicator').classList.remove('show');
             });
         }
 
