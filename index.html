@@ -1071,6 +1071,10 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const auth = firebase.auth();
+        
+        // Nastavení persistence - LOCAL znamená že zůstane přihlášený i po zavření
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        
         let currentUser = null;
 
         // Data
@@ -1081,6 +1085,21 @@
         let currentClientId = null;
         let kmPrice = 7;
         let dataLoaded = false;
+
+        // Zpracování výsledku redirect přihlášení - MUSÍ být před onAuthStateChanged
+        auth.getRedirectResult().then(result => {
+            if (result && result.user) {
+                console.log('Redirect login successful:', result.user.email);
+                currentUser = result.user;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appContent').classList.add('visible');
+                document.getElementById('userAvatar').src = result.user.photoURL || '';
+                document.getElementById('userName').textContent = result.user.displayName || result.user.email;
+                loadData();
+            }
+        }).catch(err => {
+            console.error('Redirect error:', err);
+        });
 
         // Auth state listener
         auth.onAuthStateChanged(user => {
@@ -1110,17 +1129,6 @@
                 auth.signInWithPopup(provider).catch(err => {
                     console.error('Chyba přihlášení:', err);
                 });
-            }
-        });
-
-        // Zpracování výsledku redirect přihlášení
-        auth.getRedirectResult().then(result => {
-            if (result.user) {
-                console.log('Redirect login successful:', result.user.email);
-            }
-        }).catch(err => {
-            if (err.code && err.code !== 'auth/credential-already-in-use') {
-                console.error('Redirect error:', err);
             }
         });
 
