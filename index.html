@@ -1084,6 +1084,7 @@
 
         // Auth state listener
         auth.onAuthStateChanged(user => {
+            console.log('Auth state changed:', user ? user.email : 'no user');
             if (user) {
                 currentUser = user;
                 document.getElementById('loginScreen').style.display = 'none';
@@ -1101,13 +1102,25 @@
         // Login
         document.getElementById('btnLogin').addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithRedirect(provider);
+            // Použij popup na PC, redirect na mobilu
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                auth.signInWithRedirect(provider);
+            } else {
+                auth.signInWithPopup(provider).catch(err => {
+                    console.error('Chyba přihlášení:', err);
+                });
+            }
         });
 
         // Zpracování výsledku redirect přihlášení
-        auth.getRedirectResult().catch(err => {
-            if (err.code !== 'auth/credential-already-in-use') {
-                console.error('Chyba přihlášení:', err);
+        auth.getRedirectResult().then(result => {
+            if (result.user) {
+                console.log('Redirect login successful:', result.user.email);
+            }
+        }).catch(err => {
+            if (err.code && err.code !== 'auth/credential-already-in-use') {
+                console.error('Redirect error:', err);
             }
         });
 
