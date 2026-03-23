@@ -1101,10 +1101,14 @@
         // Login
         document.getElementById('btnLogin').addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(err => {
+            auth.signInWithRedirect(provider);
+        });
+
+        // Zpracování výsledku redirect přihlášení
+        auth.getRedirectResult().catch(err => {
+            if (err.code !== 'auth/credential-already-in-use') {
                 console.error('Chyba přihlášení:', err);
-                alert('Chyba přihlášení: ' + err.message);
-            });
+            }
         });
 
         // Logout
