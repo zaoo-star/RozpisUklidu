@@ -1226,6 +1226,10 @@
                 <input type="number" id="jobPrice" placeholder="např. 500">
             </div>
             <div class="form-group">
+                <label>Max. počet lidí</label>
+                <input type="number" id="jobMaxPeople" placeholder="např. 2" min="1" value="1">
+            </div>
+            <div class="form-group">
                 <label>Poznámky</label>
                 <textarea id="jobNotes" placeholder="např. klíče u sousedů, 3 pokoje" rows="3"></textarea>
             </div>
@@ -1258,20 +1262,6 @@
         let dataLoaded = false;
         let currentUser = null;
         let jobs = []; // Sdílené zakázky
-
-        // Záložky
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById('content' + this.dataset.tab.charAt(0).toUpperCase() + this.dataset.tab.slice(1)).classList.add('active');
-                
-                if (this.dataset.tab === 'zakazky') {
-                    loadJobs();
-                }
-            });
-        });
 
         // Funkce pro vytvoření ID z jména (bez diakritiky, malá písmena)
         function nameToId(name) {
@@ -1458,13 +1448,18 @@
             
             list.innerHTML = activeJobs.map(job => {
                 const isAssigned = job.assignees && job.assignees.includes(currentUser);
+                const assigneeCount = job.assignees ? job.assignees.length : 0;
+                const maxPeople = job.maxPeople || 1;
+                const isFull = assigneeCount >= maxPeople;
+                
                 const assigneesList = job.assignees && job.assignees.length > 0 
                     ? job.assignees.map(a => `<span class="job-assignee">👤 ${a}</span>`).join('')
                     : '<span style="color:#888;font-size:0.85rem">Zatím nikdo</span>';
                 
                 let statusClass = '';
                 if (job.completed) statusClass = 'completed';
-                else if (job.assignees && job.assignees.length > 0) statusClass = 'taken';
+                else if (isFull) statusClass = 'taken';
+                else if (assigneeCount > 0) statusClass = 'taken';
                 
                 let buttons = '';
                 if (job.completed) {
@@ -1474,8 +1469,10 @@
                         <button class="job-btn job-btn-complete" onclick="completeJob('${job.id}')">✓ Hotovo</button>
                         <button class="job-btn job-btn-leave" onclick="leaveJob('${job.id}')">Odhlásit se</button>
                     `;
-                } else {
+                } else if (!isFull) {
                     buttons = `<button class="job-btn job-btn-take" onclick="takeJob('${job.id}')">🙋 Beru to</button>`;
+                } else {
+                    buttons = '<span style="color:#f59e0b;font-weight:500">Obsazeno</span>';
                 }
                 
                 // Smazat může jen autor
@@ -1491,7 +1488,7 @@
                         </div>
                         ${job.price ? '<div class="job-info">💰 ' + job.price + ' Kč</div>' : ''}
                         ${job.notes ? '<div class="job-info">📝 ' + job.notes + '</div>' : ''}
-                        <div class="job-info">Přihlášení: ${assigneesList}</div>
+                        <div class="job-info">Přihlášení: ${assigneesList} <span style="color:#888">(${assigneeCount}/${maxPeople})</span></div>
                         <div class="job-buttons">${buttons}</div>
                     </div>
                 `;
@@ -1504,6 +1501,13 @@
             if (!job) return;
             
             const assignees = job.assignees || [];
+            const maxPeople = job.maxPeople || 1;
+            
+            if (assignees.length >= maxPeople) {
+                showConfirm('Zakázka je již plně obsazená', function(){});
+                return;
+            }
+            
             if (!assignees.includes(currentUser)) {
                 assignees.push(currentUser);
                 db.ref('jobs/' + jobId + '/assignees').set(assignees);
@@ -1566,6 +1570,7 @@
             document.getElementById('jobDate').value = tomorrow.toISOString().split('T')[0];
             document.getElementById('jobTime').value = '';
             document.getElementById('jobPrice').value = '';
+            document.getElementById('jobMaxPeople').value = '1';
             document.getElementById('jobNotes').value = '';
             document.getElementById('jobModal').classList.add('active');
         });
@@ -1593,6 +1598,7 @@
                 date: date,
                 time: document.getElementById('jobTime').value || '',
                 price: parseInt(document.getElementById('jobPrice').value) || 0,
+                maxPeople: parseInt(document.getElementById('jobMaxPeople').value) || 1,
                 notes: document.getElementById('jobNotes').value.trim(),
                 createdBy: currentUser,
                 createdAt: new Date().toISOString(),
@@ -2301,6 +2307,21 @@
 
         // Init
         document.getElementById('inputKmPrice').value = kmPrice;
+        
+        // Záložky
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('content' + this.dataset.tab.charAt(0).toUpperCase() + this.dataset.tab.slice(1)).classList.add('active');
+                
+                if (this.dataset.tab === 'zakazky') {
+                    loadJobs();
+                }
+            });
+        });
+        
         checkLogin();
     </script>
 </body>
