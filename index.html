@@ -1511,6 +1511,24 @@
             if (!assignees.includes(currentUser)) {
                 assignees.push(currentUser);
                 db.ref('jobs/' + jobId + '/assignees').set(assignees);
+                
+                // Přidat do mých naplánovaných úklidů
+                cleanings.push({
+                    id: 'job_' + jobId,
+                    address: job.address,
+                    date: job.date,
+                    time: job.time || '',
+                    price: job.price || 0,
+                    duration: 0,
+                    km: 0,
+                    expenses: 0,
+                    notes: job.notes || '',
+                    paid: false,
+                    fromJob: jobId
+                });
+                save();
+                render();
+                showToast('planned');
             }
         }
 
@@ -1521,6 +1539,11 @@
             
             const assignees = (job.assignees || []).filter(a => a !== currentUser);
             db.ref('jobs/' + jobId + '/assignees').set(assignees);
+            
+            // Odebrat z mých naplánovaných úklidů
+            cleanings = cleanings.filter(c => c.fromJob !== jobId);
+            save();
+            render();
         }
 
         // Označit zakázku jako hotovou
@@ -1528,7 +1551,7 @@
             const job = jobs.find(j => j.id === jobId);
             if (!job) return;
             
-            showConfirm('Označit zakázku jako dokončenou? Přidá se ti do tvých úklidů.', function() {
+            showConfirm('Označit zakázku jako dokončenou?', function() {
                 // Označit jako dokončenou
                 db.ref('jobs/' + jobId).update({
                     completed: true,
@@ -1536,19 +1559,26 @@
                     completedBy: currentUser
                 });
                 
-                // Přidat do osobních úklidů
-                cleanings.push({
-                    id: Date.now().toString(),
-                    address: job.address,
-                    date: job.date,
-                    time: job.time || '',
-                    price: job.price || 0,
-                    duration: 0,
-                    km: 0,
-                    expenses: 0,
-                    notes: job.notes || '',
-                    paid: false
-                });
+                // Najít existující naplánovaný úklid a aktualizovat ho (už není "naplánovaný")
+                const existingIndex = cleanings.findIndex(c => c.fromJob === jobId);
+                if (existingIndex >= 0) {
+                    // Úklid už existuje, jen odstraníme fromJob flag
+                    delete cleanings[existingIndex].fromJob;
+                } else {
+                    // Přidat do osobních úklidů (pro jistotu, kdyby tam nebyl)
+                    cleanings.push({
+                        id: Date.now().toString(),
+                        address: job.address,
+                        date: job.date,
+                        time: job.time || '',
+                        price: job.price || 0,
+                        duration: 0,
+                        km: 0,
+                        expenses: 0,
+                        notes: job.notes || '',
+                        paid: false
+                    });
+                }
                 save();
                 render();
                 showToast('added');
