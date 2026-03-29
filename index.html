@@ -32,6 +32,152 @@
             font-weight: 600;
         }
 
+        .tabs {
+            display: flex;
+            background: white;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            color: #888;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .job-card {
+            background: white;
+            margin: 10px 15px;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+        }
+
+        .job-card.taken {
+            border-left-color: #f59e0b;
+        }
+
+        .job-card.completed {
+            border-left-color: #10b981;
+            opacity: 0.7;
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .job-address {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .job-datetime {
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .job-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .job-assignees {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .job-assignee {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+        }
+
+        .job-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .job-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .job-btn-take {
+            background: #667eea;
+            color: white;
+        }
+
+        .job-btn-leave {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .job-btn-complete {
+            background: #10b981;
+            color: white;
+        }
+
+        .job-btn-delete {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .add-job-btn {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            z-index: 50;
+        }
+
+        .empty-jobs {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
         .stats {
             display: flex;
             justify-content: space-around;
@@ -787,6 +933,13 @@
             <h1>🧹 Moje úklidy</h1>
         </header>
 
+        <div class="tabs">
+            <button class="tab active" id="tabMoje" data-tab="moje">📋 Moje</button>
+            <button class="tab" id="tabZakazky" data-tab="zakazky">📢 Zakázky</button>
+        </div>
+
+        <!-- TAB: Moje úklidy -->
+        <div class="tab-content active" id="contentMoje">
         <div class="stats">
         <div class="stat">
             <div class="stat-value" id="statCount">0</div>
@@ -937,6 +1090,13 @@
             ✅ Už uklizeno
         </button>
     </div>
+    </div> <!-- /contentMoje -->
+
+    <!-- TAB: Zakázky -->
+    <div class="tab-content" id="contentZakazky">
+        <div id="jobsList"></div>
+        <button class="add-job-btn" id="btnAddJob">+</button>
+    </div>
 
     <div class="footer">Vytvořil Zaoo</div>
     </div> <!-- /app-content -->
@@ -1043,6 +1203,36 @@
         </div>
     </div>
 
+    <div class="modal" id="jobModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📢 Nová zakázka</h2>
+                <button class="close-btn" id="btnCloseJob">×</button>
+            </div>
+            <div class="form-group">
+                <label>Adresa</label>
+                <input type="text" id="jobAddress" placeholder="např. Vodičkova 12, Praha">
+            </div>
+            <div class="form-group">
+                <label>Datum</label>
+                <input type="date" id="jobDate">
+            </div>
+            <div class="form-group">
+                <label>Čas</label>
+                <input type="time" id="jobTime">
+            </div>
+            <div class="form-group">
+                <label>Odhadovaná cena (Kč)</label>
+                <input type="number" id="jobPrice" placeholder="např. 500">
+            </div>
+            <div class="form-group">
+                <label>Poznámky</label>
+                <textarea id="jobNotes" placeholder="např. klíče u sousedů, 3 pokoje" rows="3"></textarea>
+            </div>
+            <button class="submit-btn" id="btnSaveJob">Přidat zakázku</button>
+        </div>
+    </div>
+
     <script>
         // Firebase konfigurace
         const firebaseConfig = {
@@ -1067,6 +1257,21 @@
         let kmPrice = 7;
         let dataLoaded = false;
         let currentUser = null;
+        let jobs = []; // Sdílené zakázky
+
+        // Záložky
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('content' + this.dataset.tab.charAt(0).toUpperCase() + this.dataset.tab.slice(1)).classList.add('active');
+                
+                if (this.dataset.tab === 'zakazky') {
+                    loadJobs();
+                }
+            });
+        });
 
         // Funkce pro vytvoření ID z jména (bez diakritiky, malá písmena)
         function nameToId(name) {
@@ -1218,6 +1423,187 @@
                 document.getElementById('syncIndicator').classList.remove('show');
             });
         }
+
+        // ========== SDÍLENÉ ZAKÁZKY ==========
+        
+        // Načtení zakázek z Firebase (společné pro všechny)
+        function loadJobs() {
+            db.ref('jobs').on('value', snapshot => {
+                const data = snapshot.val();
+                jobs = data ? Object.keys(data).map(key => ({id: key, ...data[key]})) : [];
+                // Seřadit podle data
+                jobs.sort((a, b) => new Date(a.date) - new Date(b.date));
+                renderJobs();
+            });
+        }
+
+        // Vykreslení zakázek
+        function renderJobs() {
+            const list = document.getElementById('jobsList');
+            
+            // Odfiltrovat dokončené starší než 24h
+            const now = new Date();
+            const activeJobs = jobs.filter(j => {
+                if (j.completed) {
+                    const completedDate = new Date(j.completedAt);
+                    return (now - completedDate) < 24 * 60 * 60 * 1000;
+                }
+                return true;
+            });
+            
+            if (activeJobs.length === 0) {
+                list.innerHTML = '<div class="empty-jobs">📭 Žádné zakázky<br><small>Přidej novou tlačítkem +</small></div>';
+                return;
+            }
+            
+            list.innerHTML = activeJobs.map(job => {
+                const isAssigned = job.assignees && job.assignees.includes(currentUser);
+                const assigneesList = job.assignees && job.assignees.length > 0 
+                    ? job.assignees.map(a => `<span class="job-assignee">👤 ${a}</span>`).join('')
+                    : '<span style="color:#888;font-size:0.85rem">Zatím nikdo</span>';
+                
+                let statusClass = '';
+                if (job.completed) statusClass = 'completed';
+                else if (job.assignees && job.assignees.length > 0) statusClass = 'taken';
+                
+                let buttons = '';
+                if (job.completed) {
+                    buttons = '<span style="color:#10b981;font-weight:600">✓ Dokončeno</span>';
+                } else if (isAssigned) {
+                    buttons = `
+                        <button class="job-btn job-btn-complete" onclick="completeJob('${job.id}')">✓ Hotovo</button>
+                        <button class="job-btn job-btn-leave" onclick="leaveJob('${job.id}')">Odhlásit se</button>
+                    `;
+                } else {
+                    buttons = `<button class="job-btn job-btn-take" onclick="takeJob('${job.id}')">🙋 Beru to</button>`;
+                }
+                
+                // Smazat může jen autor
+                if (job.createdBy === currentUser && !job.completed) {
+                    buttons += `<button class="job-btn job-btn-delete" onclick="deleteJob('${job.id}')">🗑</button>`;
+                }
+                
+                return `
+                    <div class="job-card ${statusClass}">
+                        <div class="job-header">
+                            <div class="job-address">${job.address}</div>
+                            <div class="job-datetime">${formatDate(job.date)}${job.time ? ' v ' + job.time : ''}</div>
+                        </div>
+                        ${job.price ? '<div class="job-info">💰 ' + job.price + ' Kč</div>' : ''}
+                        ${job.notes ? '<div class="job-info">📝 ' + job.notes + '</div>' : ''}
+                        <div class="job-info">Přihlášení: ${assigneesList}</div>
+                        <div class="job-buttons">${buttons}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Přihlásit se na zakázku
+        function takeJob(jobId) {
+            const job = jobs.find(j => j.id === jobId);
+            if (!job) return;
+            
+            const assignees = job.assignees || [];
+            if (!assignees.includes(currentUser)) {
+                assignees.push(currentUser);
+                db.ref('jobs/' + jobId + '/assignees').set(assignees);
+            }
+        }
+
+        // Odhlásit se ze zakázky
+        function leaveJob(jobId) {
+            const job = jobs.find(j => j.id === jobId);
+            if (!job) return;
+            
+            const assignees = (job.assignees || []).filter(a => a !== currentUser);
+            db.ref('jobs/' + jobId + '/assignees').set(assignees);
+        }
+
+        // Označit zakázku jako hotovou
+        function completeJob(jobId) {
+            const job = jobs.find(j => j.id === jobId);
+            if (!job) return;
+            
+            showConfirm('Označit zakázku jako dokončenou? Přidá se ti do tvých úklidů.', function() {
+                // Označit jako dokončenou
+                db.ref('jobs/' + jobId).update({
+                    completed: true,
+                    completedAt: new Date().toISOString(),
+                    completedBy: currentUser
+                });
+                
+                // Přidat do osobních úklidů
+                cleanings.push({
+                    id: Date.now().toString(),
+                    address: job.address,
+                    date: job.date,
+                    time: job.time || '',
+                    price: job.price || 0,
+                    duration: 0,
+                    km: 0,
+                    expenses: 0,
+                    notes: job.notes || '',
+                    paid: false
+                });
+                save();
+                render();
+                showToast('added');
+            });
+        }
+
+        // Smazat zakázku
+        function deleteJob(jobId) {
+            showConfirm('Opravdu smazat zakázku?', function() {
+                db.ref('jobs/' + jobId).remove();
+            });
+        }
+
+        // Otevřít modal pro novou zakázku
+        document.getElementById('btnAddJob').addEventListener('click', function() {
+            document.getElementById('jobAddress').value = '';
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('jobDate').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('jobTime').value = '';
+            document.getElementById('jobPrice').value = '';
+            document.getElementById('jobNotes').value = '';
+            document.getElementById('jobModal').classList.add('active');
+        });
+
+        document.getElementById('btnCloseJob').addEventListener('click', function() {
+            document.getElementById('jobModal').classList.remove('active');
+        });
+
+        document.getElementById('jobModal').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
+        });
+
+        // Uložit novou zakázku
+        document.getElementById('btnSaveJob').addEventListener('click', function() {
+            const address = document.getElementById('jobAddress').value.trim();
+            const date = document.getElementById('jobDate').value;
+            
+            if (!address || !date) {
+                showConfirm('Vyplň adresu a datum', function(){});
+                return;
+            }
+            
+            const job = {
+                address: address,
+                date: date,
+                time: document.getElementById('jobTime').value || '',
+                price: parseInt(document.getElementById('jobPrice').value) || 0,
+                notes: document.getElementById('jobNotes').value.trim(),
+                createdBy: currentUser,
+                createdAt: new Date().toISOString(),
+                assignees: [],
+                completed: false
+            };
+            
+            db.ref('jobs').push(job);
+            document.getElementById('jobModal').classList.remove('active');
+            showToast('planned');
+        });
 
         // Toast notifikace
         const toastMessages = {
