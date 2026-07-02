@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Moje úklidy</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <style>
+        <style>
         * {
             box-sizing: border-box;
             margin: 0;
@@ -49,244 +47,41 @@
             font-weight: 600;
         }
 
-        .tabs {
-            display: flex;
-            background: white;
-            border-bottom: 2px solid #e5e7eb;
-        }
 
-        .tab {
-            flex: 1;
-            padding: 15px;
-            text-align: center;
-            font-weight: 600;
-            color: #888;
-            border: none;
-            background: none;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            margin-bottom: -2px;
-        }
 
-        .tab.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
 
-        .tab-badge {
-            background: #ef4444;
-            color: white;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 10px;
-            margin-left: 5px;
-            font-weight: 600;
-        }
 
-        .tab-content {
-            display: none;
-        }
 
-        .tab-content.active {
-            display: block;
-        }
 
-        .job-card {
-            background: white;
-            margin: 10px 15px;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border-left: 4px solid #667eea;
-        }
 
-        .job-card.taken {
-            border-left-color: #f59e0b;
-        }
 
-        .job-card.completed {
-            border-left-color: #10b981;
-            opacity: 0.7;
-        }
 
-        .job-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
 
-        .job-address {
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: #333;
-        }
 
-        .job-datetime {
-            color: #667eea;
-            font-weight: 500;
-        }
 
-        .job-info {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 10px;
-        }
 
-        .job-assignees {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
 
-        .job-assignee {
-            background: #e0e7ff;
-            color: #4338ca;
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 0.85rem;
-        }
 
-        .job-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
 
-        .job-btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            font-size: 0.9rem;
-            cursor: pointer;
-            font-weight: 500;
-        }
 
-        .job-btn-take {
-            background: #667eea;
-            color: white;
-        }
 
-        .job-btn-leave {
-            background: #fee2e2;
-            color: #dc2626;
-        }
 
-        .job-btn-complete {
-            background: #10b981;
-            color: white;
-        }
 
-        .job-btn-delete {
-            background: #fee2e2;
-            color: #dc2626;
-        }
 
-        .add-job-btn {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            font-size: 2rem;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            z-index: 50;
-        }
 
-        .empty-jobs {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-        }
 
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 200px);
-            max-height: 600px;
-        }
 
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            background: #f8f9fa;
-        }
 
-        .chat-message {
-            margin-bottom: 12px;
-            max-width: 85%;
-        }
 
-        .chat-message.mine {
-            margin-left: auto;
-        }
 
-        .chat-message-header {
-            font-size: 0.75rem;
-            color: #888;
-            margin-bottom: 3px;
-        }
 
-        .chat-message.mine .chat-message-header {
-            text-align: right;
-        }
 
-        .chat-message-content {
-            background: white;
-            padding: 10px 14px;
-            border-radius: 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
 
-        .chat-message.mine .chat-message-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
 
-        .chat-input-container {
-            display: flex;
-            gap: 10px;
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #e5e7eb;
-        }
 
-        .chat-input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 25px;
-            font-size: 1rem;
-            outline: none;
-        }
 
-        .chat-input:focus {
-            border-color: #667eea;
-        }
 
-        .chat-send-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-size: 1.3rem;
-            cursor: pointer;
-        }
 
-        .chat-empty {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-        }
 
         .stats {
             display: flex;
@@ -860,107 +655,19 @@
             animation: spin 1s linear infinite;
         }
 
-        .login-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
 
-        .login-screen.hidden {
-            display: none;
-        }
 
-        .login-box {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            max-width: 90%;
-            width: 320px;
-        }
 
-        .login-title {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-            color: #333;
-        }
 
-        .login-subtitle {
-            color: #666;
-            margin-bottom: 20px;
-        }
 
-        .login-input {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 1rem;
-            margin-bottom: 15px;
-            text-align: center;
-        }
 
-        .login-input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
 
-        .login-btn {
-            width: 100%;
-            padding: 14px 20px;
-            border: none;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
 
-        .login-btn:active {
-            transform: scale(0.98);
-        }
 
-        .user-bar {
-            background: white;
-            padding: 10px 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #e5e7eb;
-        }
 
-        .user-name {
-            font-size: 0.9rem;
-            color: #333;
-        }
 
-        .logout-btn {
-            padding: 6px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: white;
-            font-size: 0.8rem;
-            color: #666;
-            cursor: pointer;
-        }
 
-        .app-content {
-            display: none;
-        }
 
-        .app-content.visible {
-            display: block;
-        }
 
         .confirm-content {
             text-align: center;
@@ -1022,36 +729,11 @@
     </style>
 </head>
 <body>
-    <!-- Login Screen -->
-    <div class="login-screen" id="loginScreen">
-        <div class="login-box">
-            <div class="login-title">🧹 Moje úklidy</div>
-            <div class="login-subtitle">Zadej své jméno nebo přezdívku</div>
-            <input type="text" class="login-input" id="loginName" placeholder="např. Martin" maxlength="20">
-            <button class="login-btn" id="btnLogin">Přihlásit</button>
-        </div>
-    </div>
+    <header>
+        <h1>🧹 Moje úklidy</h1>
+    </header>
 
-    <!-- App Content -->
-    <div class="app-content" id="appContent">
-        <div class="user-bar">
-            <span class="user-name">👤 <span id="userName"></span></span>
-            <button class="logout-btn" id="btnLogout">Odhlásit</button>
-        </div>
-
-        <header>
-            <h1>🧹 Moje úklidy</h1>
-        </header>
-
-        <div class="tabs">
-            <button class="tab active" id="tabMoje" data-tab="moje">📋 Moje</button>
-            <button class="tab" id="tabZakazky" data-tab="zakazky">📢 Zakázky</button>
-            <button class="tab" id="tabChat" data-tab="chat">💬 Chat <span class="tab-badge" id="chatBadge" style="display:none">0</span></button>
-        </div>
-
-        <!-- TAB: Moje úklidy -->
-        <div class="tab-content active" id="contentMoje">
-        <div class="stats">
+    <div class="stats">
         <div class="stat">
             <div class="stat-value" id="statCount">0</div>
             <div class="stat-label">K zaplacení</div>
@@ -1201,29 +883,8 @@
             ✅ Už uklizeno
         </button>
     </div>
-    </div> <!-- /contentMoje -->
-
-    <!-- TAB: Zakázky -->
-    <div class="tab-content" id="contentZakazky">
-        <div id="jobsList"></div>
-        <button class="add-job-btn" id="btnAddJob">+</button>
-    </div>
-
-    <!-- TAB: Chat -->
-    <div class="tab-content" id="contentChat">
-        <div class="chat-container">
-            <div class="chat-messages" id="chatMessages">
-                <div class="chat-empty">💬 Zatím žádné zprávy</div>
-            </div>
-            <div class="chat-input-container">
-                <input type="text" class="chat-input" id="chatInput" placeholder="Napiš zprávu..." maxlength="500">
-                <button class="chat-send-btn" id="btnSendChat">➤</button>
-            </div>
-        </div>
-    </div>
 
     <div class="footer">Vytvořil Zaoo</div>
-    </div> <!-- /app-content -->
 
     <div class="sync-indicator" id="syncIndicator">
         <span class="sync-icon">🔄</span> <span class="sync-text">Ukládám...</span>
@@ -1254,6 +915,10 @@
             <div class="form-group" id="groupTime">
                 <label>Čas příchodu</label>
                 <input type="time" id="inputTime">
+            </div>
+            <div class="form-group" id="groupPeople">
+                <label>Počet lidí</label>
+                <input type="number" id="inputPeople" placeholder="např. 2" min="1">
             </div>
             <div class="form-group" id="groupDuration">
                 <label>Doba (min)</label>
@@ -1327,55 +992,9 @@
         </div>
     </div>
 
-    <div class="modal" id="jobModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">📢 Nová zakázka</h2>
-                <button class="close-btn" id="btnCloseJob">×</button>
-            </div>
-            <div class="form-group">
-                <label>Adresa</label>
-                <input type="text" id="jobAddress" placeholder="např. Vodičkova 12, Praha">
-            </div>
-            <div class="form-group">
-                <label>Datum</label>
-                <input type="date" id="jobDate">
-            </div>
-            <div class="form-group">
-                <label>Čas</label>
-                <input type="time" id="jobTime">
-            </div>
-            <div class="form-group">
-                <label>Odhadovaná cena (Kč)</label>
-                <input type="number" id="jobPrice" placeholder="např. 500">
-            </div>
-            <div class="form-group">
-                <label>Max. počet lidí</label>
-                <input type="number" id="jobMaxPeople" placeholder="např. 2" min="1" value="1">
-            </div>
-            <div class="form-group">
-                <label>Poznámky</label>
-                <textarea id="jobNotes" placeholder="např. klíče u sousedů, 3 pokoje" rows="3"></textarea>
-            </div>
-            <button class="submit-btn" id="btnSaveJob">Přidat zakázku</button>
-        </div>
-    </div>
-
     <script>
-        // Firebase konfigurace
-        const firebaseConfig = {
-            apiKey: "AIzaSyCmt3FIIQ1A-3KTPk25YkiBiGZ6IBDE7Uo",
-            authDomain: "evidence-uklidu.firebaseapp.com",
-            databaseURL: "https://evidence-uklidu-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "evidence-uklidu",
-            storageBucket: "evidence-uklidu.firebasestorage.app",
-            messagingSenderId: "761990783986",
-            appId: "1:761990783986:web:4c99bb86b5330016af816b"
-        };
+        // ========== LOKÁLNÍ ÚLOŽIŠTĚ (IndexedDB + localStorage) ==========
         
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
         // Data
         let cleanings = [];
         let clients = [];
@@ -1384,109 +1003,94 @@
         let currentClientId = null;
         let kmPrice = 7;
         let dataLoaded = false;
-        let currentUser = null;
-        let jobs = []; // Sdílené zakázky
-        let messages = []; // Chat zprávy
-        let lastReadMessageId = localStorage.getItem('lastReadMessageId') || null;
-        let unreadCount = 0;
 
-        // Funkce pro vytvoření ID z jména (bez diakritiky, malá písmena)
-        function nameToId(name) {
-            return name.toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9]/g, '');
+        // IndexedDB setup
+        let idb = null;
+        const DB_NAME = 'uklidyDB';
+        const STORE_NAME = 'appData';
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = function(e) {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+                request.onsuccess = function(e) {
+                    idb = e.target.result;
+                    resolve(idb);
+                };
+                request.onerror = function(e) {
+                    console.error('IndexedDB error:', e);
+                    reject(e);
+                };
+            });
         }
 
-        // Kontrola uloženého přihlášení
-        function checkLogin() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                currentUser = savedUser;
-                showApp();
-                loadData();
-            }
+        function idbGet(key) {
+            return new Promise((resolve) => {
+                if (!idb) { resolve(null); return; }
+                try {
+                    const tx = idb.transaction(STORE_NAME, 'readonly');
+                    const store = tx.objectStore(STORE_NAME);
+                    const req = store.get(key);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                } catch(e) { resolve(null); }
+            });
         }
 
-        // Zobrazení aplikace
-        function showApp() {
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('appContent').classList.add('visible');
-            document.getElementById('userName').textContent = currentUser;
+        function idbSet(key, value) {
+            return new Promise((resolve) => {
+                if (!idb) { resolve(false); return; }
+                try {
+                    const tx = idb.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const req = store.put(value, key);
+                    req.onsuccess = () => resolve(true);
+                    req.onerror = () => resolve(false);
+                } catch(e) { resolve(false); }
+            });
         }
 
-        // Přihlášení
-        document.getElementById('btnLogin').addEventListener('click', doLogin);
-        document.getElementById('loginName').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') doLogin();
-        });
-
-        function doLogin() {
-            const name = document.getElementById('loginName').value.trim();
-            if (!name) {
-                document.getElementById('loginName').focus();
-                return;
-            }
-            currentUser = name;
-            localStorage.setItem('currentUser', name);
-            showApp();
-            loadData();
-        }
-
-        // Odhlášení
-        document.getElementById('btnLogout').addEventListener('click', function() {
-            localStorage.removeItem('currentUser');
-            currentUser = null;
-            cleanings = [];
-            clients = [];
-            document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('appContent').classList.remove('visible');
-            document.getElementById('loginName').value = '';
-            render();
-        });
-
-        // Load data from Firebase
-        function loadData() {
-            if (!currentUser) return;
-            const odataLoaded = false;
-            const userId = nameToId(currentUser);
-            
-            // Nejdřív načti lokální data jako zálohu
-            let localCleanings = [];
-            let localClients = [];
-            let localKmPrice = 7;
+        // Načtení dat - IndexedDB má prioritu, localStorage je fallback
+        async function loadData() {
+            let idbData = null;
             try {
-                localCleanings = JSON.parse(localStorage.getItem('cleanings_' + userId)) || [];
-                localClients = JSON.parse(localStorage.getItem('clients_' + userId)) || [];
-                localKmPrice = parseFloat(localStorage.getItem('kmPrice_' + userId)) || 7;
+                idbData = await idbGet('data');
             } catch(e) {}
 
-            db.ref('users/' + userId).once('value').then(snapshot => {
-                const data = snapshot.val();
-                if (data) {
-                    cleanings = data.cleanings || [];
-                    clients = data.clients || [];
-                    kmPrice = data.kmPrice || 7;
-                } else if (localCleanings.length > 0) {
-                    // V cloudu nic není, použij lokální a nahraj
-                    cleanings = localCleanings;
-                    clients = localClients;
-                    kmPrice = localKmPrice;
-                    save();
-                }
-                document.getElementById('inputKmPrice').value = kmPrice;
-                dataLoaded = true;
-                render();
-                showToast('loaded');
-            }).catch(err => {
-                console.error('Chyba při načítání:', err);
-                // Fallback na localStorage
-                cleanings = localCleanings;
-                clients = localClients;
-                kmPrice = localKmPrice;
-                document.getElementById('inputKmPrice').value = kmPrice;
-                dataLoaded = true;
-                render();
-            });
+            let lsCleanings = [];
+            let lsClients = [];
+            let lsKmPrice = 7;
+            try {
+                lsCleanings = JSON.parse(localStorage.getItem('cleanings')) || [];
+                lsClients = JSON.parse(localStorage.getItem('clients')) || [];
+                lsKmPrice = parseFloat(localStorage.getItem('kmPrice')) || 7;
+            } catch(e) {}
+
+            if (idbData && idbData.cleanings && idbData.cleanings.length >= lsCleanings.length) {
+                // IndexedDB má víc nebo stejně dat
+                cleanings = idbData.cleanings || [];
+                clients = idbData.clients || [];
+                kmPrice = idbData.kmPrice || 7;
+            } else if (lsCleanings.length > 0) {
+                // localStorage má víc dat (nebo IndexedDB je prázdná)
+                cleanings = lsCleanings;
+                clients = lsClients;
+                kmPrice = lsKmPrice;
+                save(); // Synchronizovat zpět do IndexedDB
+            } else if (idbData) {
+                cleanings = idbData.cleanings || [];
+                clients = idbData.clients || [];
+                kmPrice = idbData.kmPrice || 7;
+            }
+
+            document.getElementById('inputKmPrice').value = kmPrice;
+            dataLoaded = true;
+            render();
         }
 
         // Sync indikátor
@@ -1500,7 +1104,7 @@
                 text.textContent = 'Ukládám...';
                 indicator.classList.add('saving');
             } else {
-                icon.textContent = '☁️';
+                icon.textContent = '💾';
                 text.textContent = 'Uloženo';
                 indicator.classList.remove('saving');
             }
@@ -1510,263 +1114,33 @@
             if (!saving) {
                 setTimeout(() => {
                     indicator.classList.remove('show');
-                }, 1500);
+                }, 1200);
             }
         }
 
-        // Save data to Firebase
+        // Uložení dat - do IndexedDB i localStorage (dvojitá záloha)
         function save() {
-            if (!currentUser) return;
-            const userId = nameToId(currentUser);
-            
             showSync(true);
             
-            // Uložit do localStorage jako zálohu
-            localStorage.setItem('cleanings_' + userId, JSON.stringify(cleanings));
-            localStorage.setItem('clients_' + userId, JSON.stringify(clients));
-            localStorage.setItem('kmPrice_' + userId, kmPrice.toString());
+            // localStorage
+            try {
+                localStorage.setItem('cleanings', JSON.stringify(cleanings));
+                localStorage.setItem('clients', JSON.stringify(clients));
+                localStorage.setItem('kmPrice', kmPrice.toString());
+            } catch(e) {
+                console.error('localStorage error:', e);
+            }
             
-            // Uložit do Firebase
-            db.ref('users/' + userId).set({
+            // IndexedDB
+            idbSet('data', {
                 cleanings: cleanings,
                 clients: clients,
                 kmPrice: kmPrice,
-                displayName: currentUser,
                 lastUpdate: new Date().toISOString()
             }).then(() => {
                 showSync(false);
-            }).catch(err => {
-                console.error('Chyba při ukládání:', err);
-                document.getElementById('syncIndicator').classList.remove('show');
             });
         }
-
-        // ========== SDÍLENÉ ZAKÁZKY ==========
-        
-        // Načtení zakázek z Firebase (společné pro všechny)
-        function loadJobs() {
-            db.ref('jobs').on('value', snapshot => {
-                const data = snapshot.val();
-                jobs = data ? Object.keys(data).map(key => ({id: key, ...data[key]})) : [];
-                // Seřadit podle data
-                jobs.sort((a, b) => new Date(a.date) - new Date(b.date));
-                renderJobs();
-            });
-        }
-
-        // Vykreslení zakázek
-        function renderJobs() {
-            const list = document.getElementById('jobsList');
-            
-            // Odfiltrovat dokončené starší než 24h
-            const now = new Date();
-            const activeJobs = jobs.filter(j => {
-                if (j.completed) {
-                    const completedDate = new Date(j.completedAt);
-                    return (now - completedDate) < 24 * 60 * 60 * 1000;
-                }
-                return true;
-            });
-            
-            if (activeJobs.length === 0) {
-                list.innerHTML = '<div class="empty-jobs">📭 Žádné zakázky<br><small>Přidej novou tlačítkem +</small></div>';
-                return;
-            }
-            
-            list.innerHTML = activeJobs.map(job => {
-                const isAssigned = job.assignees && job.assignees.includes(currentUser);
-                const assigneeCount = job.assignees ? job.assignees.length : 0;
-                const maxPeople = job.maxPeople || 1;
-                const isFull = assigneeCount >= maxPeople;
-                
-                const assigneesList = job.assignees && job.assignees.length > 0 
-                    ? job.assignees.map(a => `<span class="job-assignee">👤 ${a}</span>`).join('')
-                    : '<span style="color:#888;font-size:0.85rem">Zatím nikdo</span>';
-                
-                let statusClass = '';
-                if (job.completed) statusClass = 'completed';
-                else if (isFull) statusClass = 'taken';
-                else if (assigneeCount > 0) statusClass = 'taken';
-                
-                let buttons = '';
-                if (job.completed) {
-                    buttons = '<span style="color:#10b981;font-weight:600">✓ Dokončeno</span>';
-                } else if (isAssigned) {
-                    buttons = `
-                        <button class="job-btn job-btn-complete" onclick="completeJob('${job.id}')">✓ Hotovo</button>
-                        <button class="job-btn job-btn-leave" onclick="leaveJob('${job.id}')">Odhlásit se</button>
-                    `;
-                } else if (!isFull) {
-                    buttons = `<button class="job-btn job-btn-take" onclick="takeJob('${job.id}')">🙋 Beru to</button>`;
-                } else {
-                    buttons = '<span style="color:#f59e0b;font-weight:500">Obsazeno</span>';
-                }
-                
-                // Smazat může jen autor
-                if (job.createdBy === currentUser && !job.completed) {
-                    buttons += `<button class="job-btn job-btn-delete" onclick="deleteJob('${job.id}')">🗑</button>`;
-                }
-                
-                return `
-                    <div class="job-card ${statusClass}">
-                        <div class="job-header">
-                            <div class="job-address">${job.address}</div>
-                            <div class="job-datetime">${formatDate(job.date)}${job.time ? ' v ' + job.time : ''}</div>
-                        </div>
-                        ${job.price ? '<div class="job-info">💰 ' + job.price + ' Kč</div>' : ''}
-                        ${job.notes ? '<div class="job-info">📝 ' + job.notes + '</div>' : ''}
-                        <div class="job-info">Přihlášení: ${assigneesList} <span style="color:#888">(${assigneeCount}/${maxPeople})</span></div>
-                        <div class="job-buttons">${buttons}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Přihlásit se na zakázku
-        function takeJob(jobId) {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            
-            const assignees = job.assignees || [];
-            const maxPeople = job.maxPeople || 1;
-            
-            if (assignees.length >= maxPeople) {
-                showConfirm('Zakázka je již plně obsazená', function(){});
-                return;
-            }
-            
-            if (!assignees.includes(currentUser)) {
-                assignees.push(currentUser);
-                db.ref('jobs/' + jobId + '/assignees').set(assignees);
-                
-                // Přidat do mých naplánovaných úklidů
-                cleanings.push({
-                    id: 'job_' + jobId,
-                    address: job.address,
-                    date: job.date,
-                    time: job.time || '',
-                    price: job.price || 0,
-                    duration: 0,
-                    km: 0,
-                    expenses: 0,
-                    notes: job.notes || '',
-                    paid: false,
-                    fromJob: jobId
-                });
-                save();
-                render();
-                showToast('planned');
-            }
-        }
-
-        // Odhlásit se ze zakázky
-        function leaveJob(jobId) {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            
-            const assignees = (job.assignees || []).filter(a => a !== currentUser);
-            db.ref('jobs/' + jobId + '/assignees').set(assignees);
-            
-            // Odebrat z mých naplánovaných úklidů
-            cleanings = cleanings.filter(c => c.fromJob !== jobId);
-            save();
-            render();
-        }
-
-        // Označit zakázku jako hotovou
-        function completeJob(jobId) {
-            const job = jobs.find(j => j.id === jobId);
-            if (!job) return;
-            
-            showConfirm('Označit zakázku jako dokončenou?', function() {
-                // Označit jako dokončenou
-                db.ref('jobs/' + jobId).update({
-                    completed: true,
-                    completedAt: new Date().toISOString(),
-                    completedBy: currentUser
-                });
-                
-                // Najít existující naplánovaný úklid a aktualizovat ho (už není "naplánovaný")
-                const existingIndex = cleanings.findIndex(c => c.fromJob === jobId);
-                if (existingIndex >= 0) {
-                    // Úklid už existuje, jen odstraníme fromJob flag
-                    delete cleanings[existingIndex].fromJob;
-                } else {
-                    // Přidat do osobních úklidů (pro jistotu, kdyby tam nebyl)
-                    cleanings.push({
-                        id: Date.now().toString(),
-                        address: job.address,
-                        date: job.date,
-                        time: job.time || '',
-                        price: job.price || 0,
-                        duration: 0,
-                        km: 0,
-                        expenses: 0,
-                        notes: job.notes || '',
-                        paid: false
-                    });
-                }
-                save();
-                render();
-                showToast('added');
-            });
-        }
-
-        // Smazat zakázku
-        function deleteJob(jobId) {
-            showConfirm('Opravdu smazat zakázku?', function() {
-                db.ref('jobs/' + jobId).remove();
-            });
-        }
-
-        // Otevřít modal pro novou zakázku
-        document.getElementById('btnAddJob').addEventListener('click', function() {
-            document.getElementById('jobAddress').value = '';
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('jobDate').value = tomorrow.toISOString().split('T')[0];
-            document.getElementById('jobTime').value = '';
-            document.getElementById('jobPrice').value = '';
-            document.getElementById('jobMaxPeople').value = '1';
-            document.getElementById('jobNotes').value = '';
-            document.getElementById('jobModal').classList.add('active');
-        });
-
-        document.getElementById('btnCloseJob').addEventListener('click', function() {
-            document.getElementById('jobModal').classList.remove('active');
-        });
-
-        document.getElementById('jobModal').addEventListener('click', function(e) {
-            if (e.target === this) this.classList.remove('active');
-        });
-
-        // Uložit novou zakázku
-        document.getElementById('btnSaveJob').addEventListener('click', function() {
-            const address = document.getElementById('jobAddress').value.trim();
-            const date = document.getElementById('jobDate').value;
-            
-            if (!address || !date) {
-                showConfirm('Vyplň adresu a datum', function(){});
-                return;
-            }
-            
-            const job = {
-                address: address,
-                date: date,
-                time: document.getElementById('jobTime').value || '',
-                price: parseInt(document.getElementById('jobPrice').value) || 0,
-                maxPeople: parseInt(document.getElementById('jobMaxPeople').value) || 1,
-                notes: document.getElementById('jobNotes').value.trim(),
-                createdBy: currentUser,
-                createdAt: new Date().toISOString(),
-                assignees: [],
-                completed: false
-            };
-            
-            db.ref('jobs').push(job);
-            document.getElementById('jobModal').classList.remove('active');
-            showToast('planned');
-        });
 
         // Toast notifikace
         const toastMessages = {
@@ -2064,6 +1438,7 @@
                         <div class="cleaning-address">${c.address}</div>
                         <div class="cleaning-meta">
                             <span>${formatDate(c.date)}${c.time ? ' v ' + c.time : ''}</span>
+                            ${c.people ? '<span>👥 ' + c.people + '</span>' : ''}
                             ${c.duration ? '<span>⏱ ' + formatDuration(c.duration) + '</span>' : ''}
                             ${c.km ? '<span>🚗 ' + c.km + ' km</span>' : ''}
                             ${c.expenses ? '<span>💸 -' + c.expenses + ' Kč</span>' : ''}
@@ -2234,6 +1609,7 @@
             document.getElementById('inputAddress').value = c.address;
             document.getElementById('inputDate').value = c.date;
             document.getElementById('inputTime').value = c.time || '';
+            document.getElementById('inputPeople').value = c.people || '';
             document.getElementById('inputDuration').value = c.duration || '';
             document.getElementById('inputPrice').value = c.price || '';
             document.getElementById('inputKm').value = c.km || '';
@@ -2275,6 +1651,7 @@
             document.getElementById('inputClient').value = '';
             document.getElementById('inputAddress').value = '';
             document.getElementById('inputTime').value = '';
+            document.getElementById('inputPeople').value = '';
             document.getElementById('inputDuration').value = '';
             document.getElementById('inputPrice').value = '';
             document.getElementById('inputKm').value = '';
@@ -2322,7 +1699,7 @@
             const date = document.getElementById('inputDate').value;
             
             if (!address || !date) {
-                alert('Vyplň adresu a datum');
+                showConfirm('Vyplň adresu a datum', function(){});
                 return;
             }
 
@@ -2330,6 +1707,7 @@
                 address: address,
                 date: date,
                 time: document.getElementById('inputTime').value || '',
+                people: parseInt(document.getElementById('inputPeople').value) || 0,
                 duration: parseInt(document.getElementById('inputDuration').value) || 0,
                 price: parseInt(document.getElementById('inputPrice').value) || 0,
                 km: parseFloat(document.getElementById('inputKm').value) || 0,
@@ -2462,146 +1840,29 @@
             if (e.target === this) hideConfirm();
         });
 
-        // ========== CHAT ==========
-        
-        // Načtení chatu z Firebase
-        function loadChat() {
-            db.ref('chat').orderByChild('timestamp').limitToLast(100).on('value', snapshot => {
-                const data = snapshot.val();
-                messages = data ? Object.keys(data).map(key => ({id: key, ...data[key]})) : [];
-                messages.sort((a, b) => a.timestamp - b.timestamp);
-                
-                // Spočítat nepřečtené (jen od ostatních)
-                updateUnreadCount();
-                
-                renderChat();
-            });
-        }
-
-        // Aktualizace počtu nepřečtených
-        function updateUnreadCount() {
-            if (!lastReadMessageId) {
-                // První načtení - označit vše jako přečtené
-                if (messages.length > 0) {
-                    lastReadMessageId = messages[messages.length - 1].id;
-                    localStorage.setItem('lastReadMessageId', lastReadMessageId);
-                }
-                unreadCount = 0;
-            } else {
-                // Spočítat nové zprávy od ostatních
-                const lastReadIndex = messages.findIndex(m => m.id === lastReadMessageId);
-                if (lastReadIndex >= 0) {
-                    const newMessages = messages.slice(lastReadIndex + 1);
-                    unreadCount = newMessages.filter(m => m.user !== currentUser).length;
-                } else {
-                    unreadCount = messages.filter(m => m.user !== currentUser).length;
-                }
+        // Init - požádat o trvalé úložiště a načíst data
+        (async function init() {
+            // Požádat prohlížeč o trvalé úložiště (data se nesmažou při čištění)
+            if (navigator.storage && navigator.storage.persist) {
+                try {
+                    const isPersisted = await navigator.storage.persisted();
+                    if (!isPersisted) {
+                        const granted = await navigator.storage.persist();
+                        console.log('Trvalé úložiště:', granted ? 'povoleno' : 'zamítnuto');
+                    } else {
+                        console.log('Trvalé úložiště: již aktivní');
+                    }
+                } catch(e) {}
             }
             
-            // Aktualizovat badge
-            const badge = document.getElementById('chatBadge');
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-                badge.style.display = 'inline';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-
-        // Označit zprávy jako přečtené
-        function markChatAsRead() {
-            if (messages.length > 0) {
-                lastReadMessageId = messages[messages.length - 1].id;
-                localStorage.setItem('lastReadMessageId', lastReadMessageId);
-                unreadCount = 0;
-                const badge = document.getElementById('chatBadge');
-                badge.style.display = 'none';
-            }
-        }
-
-        // Vykreslení chatu
-        function renderChat() {
-            const container = document.getElementById('chatMessages');
-            
-            if (messages.length === 0) {
-                container.innerHTML = '<div class="chat-empty">💬 Zatím žádné zprávy<br><small>Napiš první!</small></div>';
-                return;
+            try {
+                await openDB();
+            } catch(e) {
+                console.error('IndexedDB se nepodařilo otevřít, používám jen localStorage');
             }
             
-            container.innerHTML = messages.map(msg => {
-                const isMine = msg.user === currentUser;
-                const time = new Date(msg.timestamp).toLocaleString('cs-CZ', {
-                    day: 'numeric',
-                    month: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                return `
-                    <div class="chat-message ${isMine ? 'mine' : ''}">
-                        <div class="chat-message-header">${isMine ? '' : msg.user + ' • '}${time}</div>
-                        <div class="chat-message-content">${escapeHtml(msg.text)}</div>
-                    </div>
-                `;
-            }).join('');
-            
-            // Scrollovat dolů
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // Escape HTML pro bezpečnost
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Odeslání zprávy
-        document.getElementById('btnSendChat').addEventListener('click', sendMessage);
-        document.getElementById('chatInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            
-            if (!text) return;
-            
-            db.ref('chat').push({
-                user: currentUser,
-                text: text,
-                timestamp: Date.now()
-            });
-            
-            input.value = '';
-        }
-
-        // Init
-        document.getElementById('inputKmPrice').value = kmPrice;
-        
-        // Záložky
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById('content' + this.dataset.tab.charAt(0).toUpperCase() + this.dataset.tab.slice(1)).classList.add('active');
-                
-                if (this.dataset.tab === 'zakazky') {
-                    loadJobs();
-                }
-                if (this.dataset.tab === 'chat') {
-                    loadChat();
-                    markChatAsRead();
-                }
-            });
-        });
-        
-        // Spustit sledování chatu pro badge
-        loadChat();
-        
-        checkLogin();
+            await loadData();
+        })();
     </script>
 </body>
 </html>
