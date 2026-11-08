@@ -285,6 +285,11 @@
             max-width: 500px;
             border-radius: 20px 20px 0 0;
             padding: 25px;
+            max-height: 92vh;
+            max-height: 92dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
         }
 
         .modal-header {
@@ -292,6 +297,12 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            position: sticky;
+            top: -25px; /* přilepí se k hornímu okraji i přes padding okna */
+            background: white;
+            padding: 10px 0;
+            margin-top: -10px;
+            z-index: 1;
         }
 
         .modal-title {
@@ -351,6 +362,19 @@
             font-weight: 600;
             cursor: pointer;
             margin-top: 10px;
+        }
+
+        .delete-link-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
         }
 
         .empty-state {
@@ -778,7 +802,7 @@
         <div class="help-content" id="helpContent">
             <p><strong>📅 Naplánovat</strong> – úklid v budoucnu, zadáš jen adresu a datum</p>
             <p><strong>✅ Už uklizeno</strong> – hotový úklid, vyplníš i cenu a dobu</p>
-            <p><strong>✏️</strong> – upravit údaje (doplnit cenu po úklidu)</p>
+            <p><strong>✏️</strong> – upravit údaje (doplnit cenu po úklidu), dole v okně jde úklid i smazat</p>
             <p><strong>✓</strong> – označit jako zaplaceno → přesune se do historie</p>
             <p><strong>×</strong> – smazat úklid</p>
             <p><strong>Náklady</strong> – čisticí prostředky apod. se odečtou od zisku</p>
@@ -871,7 +895,7 @@
     </div>
 
     <div id="historyToggle" class="history-toggle" style="display:none">
-        📜 Zobrazit historii (<span id="historyCount">0</span>)
+        📜 <span id="historyToggleText">Zobrazit historii</span> (<span id="historyCount">0</span>)
     </div>
     <div class="cleaning-list history-list" id="historyList"></div>
 
@@ -941,6 +965,7 @@
                 <textarea id="inputNotes" placeholder="nepovinné" rows="2"></textarea>
             </div>
             <button class="submit-btn" id="btnSubmit">Přidat</button>
+            <button class="delete-link-btn" id="btnDeleteInModal" style="display:none">🗑 Smazat tento úklid</button>
         </div>
     </div>
 
@@ -1068,14 +1093,17 @@
             try {
                 lsCleanings = JSON.parse(localStorage.getItem('cleanings')) || [];
                 lsClients = JSON.parse(localStorage.getItem('clients')) || [];
-                lsKmPrice = parseFloat(localStorage.getItem('kmPrice')) || 7;
+                const lsK = parseFloat(localStorage.getItem('kmPrice'));
+                lsKmPrice = isNaN(lsK) ? 7 : lsK;
             } catch(e) {}
 
-            if (idbData && idbData.cleanings && idbData.cleanings.length >= lsCleanings.length) {
+            if (!Array.isArray(lsCleanings)) lsCleanings = [];
+            if (!Array.isArray(lsClients)) lsClients = [];
+            if (idbData && Array.isArray(idbData.cleanings) && idbData.cleanings.length >= lsCleanings.length) {
                 // IndexedDB má víc nebo stejně dat
-                cleanings = idbData.cleanings || [];
-                clients = idbData.clients || [];
-                kmPrice = idbData.kmPrice || 7;
+                cleanings = idbData.cleanings;
+                clients = Array.isArray(idbData.clients) ? idbData.clients : [];
+                kmPrice = (typeof idbData.kmPrice === 'number') ? idbData.kmPrice : 7;
             } else if (lsCleanings.length > 0) {
                 // localStorage má víc dat (nebo IndexedDB je prázdná)
                 cleanings = lsCleanings;
@@ -1083,9 +1111,9 @@
                 kmPrice = lsKmPrice;
                 save(); // Synchronizovat zpět do IndexedDB
             } else if (idbData) {
-                cleanings = idbData.cleanings || [];
-                clients = idbData.clients || [];
-                kmPrice = idbData.kmPrice || 7;
+                cleanings = Array.isArray(idbData.cleanings) ? idbData.cleanings : [];
+                clients = Array.isArray(idbData.clients) ? idbData.clients : [];
+                kmPrice = (typeof idbData.kmPrice === 'number') ? idbData.kmPrice : 7;
             }
 
             document.getElementById('inputKmPrice').value = kmPrice;
@@ -1192,7 +1220,43 @@
 
         // Format helpers
         function formatDate(d) {
-            return new Date(d).toLocaleDateString('cs-CZ', {day:'numeric', month:'long', year:'numeric'});
+            return parseLocalDate(d).toLocaleDateString('cs-CZ', {day:'numeric', month:'long', year:'numeric'});
+        }
+
+        // "2026-11-08" -> Date v místním čase (ne UTC)
+        function parseLocalDate(s) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || '');
+            if (!m) return new Date(s);
+            return new Date(+m[1], +m[2] - 1, +m[3]);
+        }
+
+        // Dnešní (nebo posunuté) datum jako "YYYY-MM-DD" v místním čase
+        function localISODate(offsetDays = 0) {
+            const d = new Date();
+            d.setDate(d.getDate() + offsetDays);
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        // Čistý výdělek z jednoho úklidu: cena + doprava - náklady
+        function netOf(c) {
+            return (c.price || 0) + Math.round((c.km || 0) * kmPrice) - (c.expenses || 0);
+        }
+
+        // Zaokrouhlení km (aby nevznikalo 0.30000000000000004)
+        function roundKm(v) {
+            return Math.round((v || 0) * 10) / 10;
+        }
+
+        // 1 úklid, 2 úklidy, 5 úklidů
+        function pocetUklidu(n) {
+            return n + (n === 1 ? ' úklid' : (n >= 2 && n <= 4) ? ' úklidy' : ' úklidů');
+        }
+
+        // Bezpečné vložení textu do HTML
+        function esc(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
         function formatDuration(min) {
@@ -1211,14 +1275,14 @@
 
             const planned = cleanings.filter(c => {
                 if (c.paid) return false;
-                const cDate = new Date(c.date);
+                const cDate = parseLocalDate(c.date);
                 cDate.setHours(0,0,0,0);
                 return cDate > today;
             });
             
             const unpaid = cleanings.filter(c => {
                 if (c.paid) return false;
-                const cDate = new Date(c.date);
+                const cDate = parseLocalDate(c.date);
                 cDate.setHours(0,0,0,0);
                 return cDate <= today;
             });
@@ -1231,7 +1295,7 @@
             if (planned.length > 0) {
                 plannedSection.style.display = 'block';
                 plannedList.innerHTML = planned
-                    .sort((a,b) => new Date(a.date) - new Date(b.date))
+                    .sort((a,b) => parseLocalDate(a.date) - parseLocalDate(b.date))
                     .map(c => cardHTML(c, 'planned')).join('');
             } else {
                 plannedSection.style.display = 'none';
@@ -1243,7 +1307,7 @@
             if (unpaid.length > 0) {
                 unpaidSection.style.display = 'block';
                 unpaidList.innerHTML = unpaid
-                    .sort((a,b) => new Date(b.date) - new Date(a.date))
+                    .sort((a,b) => parseLocalDate(b.date) - parseLocalDate(a.date))
                     .map(c => cardHTML(c, 'unpaid')).join('');
             } else {
                 unpaidSection.style.display = 'none';
@@ -1260,18 +1324,21 @@
                 historyToggle.style.display = 'block';
                 document.getElementById('historyCount').textContent = history.length;
                 historyList.innerHTML = history
-                    .sort((a,b) => new Date(b.date) - new Date(a.date))
+                    .sort((a,b) => parseLocalDate(b.date) - parseLocalDate(a.date))
                     .map(c => cardHTML(c, 'paid')).join('');
             } else {
                 historyToggle.style.display = 'none';
+                historyList.style.display = 'none';
+                historyList.innerHTML = '';
+                document.getElementById('historyToggleText').textContent = 'Zobrazit historii';
             }
 
             // Stats (only unpaid)
             const totalMoney = unpaid.reduce((s,c) => s + (c.price || 0), 0);
             const totalExpenses = unpaid.reduce((s,c) => s + (c.expenses || 0), 0);
-            const totalKm = unpaid.reduce((s,c) => s + (c.km || 0), 0);
+            const totalKm = roundKm(unpaid.reduce((s,c) => s + (c.km || 0), 0));
             const totalKmMoney = Math.round(totalKm * kmPrice);
-            const totalProfit = totalMoney + totalKmMoney;
+            const totalProfit = totalMoney + totalKmMoney - totalExpenses;
             
             document.getElementById('statCount').textContent = unpaid.length;
             document.getElementById('statMoney').textContent = totalMoney.toLocaleString('cs-CZ') + ' Kč';
@@ -1302,7 +1369,7 @@
             document.getElementById('totalCleanings').textContent = all.length;
             
             // Celkem vyděláno (pouze zaplacené)
-            const totalEarned = paid.reduce((s,c) => s + (c.price || 0) + Math.round((c.km || 0) * kmPrice), 0);
+            const totalEarned = paid.reduce((s,c) => s + netOf(c), 0);
             document.getElementById('totalEarned').textContent = totalEarned.toLocaleString('cs-CZ') + ' Kč';
             
             // Celkem odpracováno
@@ -1310,12 +1377,12 @@
             document.getElementById('totalHours').textContent = formatDuration(totalMin) || '0h';
             
             // Celkem najeto
-            const totalKmAll = all.reduce((s,c) => s + (c.km || 0), 0);
-            document.getElementById('totalKm').textContent = totalKmAll + ' km';
+            const totalKmAll = roundKm(all.reduce((s,c) => s + (c.km || 0), 0));
+            document.getElementById('totalKm').textContent = totalKmAll.toLocaleString('cs-CZ') + ' km';
             
             // Průměr za měsíc
             if (paid.length > 0) {
-                const dates = paid.map(c => new Date(c.date));
+                const dates = paid.map(c => parseLocalDate(c.date));
                 const minDate = new Date(Math.min(...dates));
                 const maxDate = new Date(Math.max(...dates));
                 const months = Math.max(1, (maxDate.getFullYear() - minDate.getFullYear()) * 12 + (maxDate.getMonth() - minDate.getMonth()) + 1);
@@ -1360,21 +1427,21 @@
                 list.innerHTML = clients.map(c => `
                     <div class="client-card">
                         <div class="client-header">
-                            <div class="client-name">${c.name}</div>
+                            <div class="client-name">${esc(c.name)}</div>
                             <div class="client-actions">
-                                <button class="client-btn client-btn-use" data-client-action="use" data-client-id="${c.id}" title="Použít">▶</button>
-                                <button class="client-btn client-btn-edit" data-client-action="edit" data-client-id="${c.id}" title="Upravit">✏️</button>
-                                <button class="client-btn client-btn-delete" data-client-action="delete" data-client-id="${c.id}" title="Smazat">×</button>
+                                <button class="client-btn client-btn-use" data-client-action="use" data-client-id="${esc(c.id)}" title="Použít">▶</button>
+                                <button class="client-btn client-btn-edit" data-client-action="edit" data-client-id="${esc(c.id)}" title="Upravit">✏️</button>
+                                <button class="client-btn client-btn-delete" data-client-action="delete" data-client-id="${esc(c.id)}" title="Smazat">×</button>
                             </div>
                         </div>
                         <div class="client-info">
-                            📍 ${c.address}
-                            ${c.price ? ' • 💰 ' + c.price + ' Kč' : ''}
-                            ${c.duration ? ' • ⏱ ' + c.duration + ' min' : ''}
-                            ${c.time ? ' • 🕐 ' + c.time : ''}
-                            ${c.km ? ' • 🚗 ' + c.km + ' km' : ''}
+                            📍 ${esc(c.address)}
+                            ${c.price ? ' • 💰 ' + esc(c.price) + ' Kč' : ''}
+                            ${c.duration ? ' • ⏱ ' + esc(c.duration) + ' min' : ''}
+                            ${c.time ? ' • 🕐 ' + esc(c.time) : ''}
+                            ${c.km ? ' • 🚗 ' + esc(c.km) + ' km' : ''}
                         </div>
-                        ${c.notes ? '<div class="client-notes">📝 ' + c.notes + '</div>' : ''}
+                        ${c.notes ? '<div class="client-notes">📝 ' + esc(c.notes) + '</div>' : ''}
                     </div>
                 `).join('');
                 
@@ -1397,7 +1464,7 @@
             // Seskupit podle adresy
             const addressMap = {};
             cleanings.forEach(c => {
-                const addr = c.address.toLowerCase().trim();
+                const addr = String(c.address || '').toLowerCase().trim();
                 if (!addressMap[addr]) {
                     addressMap[addr] = {
                         address: c.address,
@@ -1407,7 +1474,7 @@
                     };
                 }
                 addressMap[addr].count++;
-                addressMap[addr].total += (c.price || 0) + Math.round((c.km || 0) * kmPrice);
+                addressMap[addr].total += netOf(c);
                 addressMap[addr].totalTime += c.duration || 0;
             });
             
@@ -1418,7 +1485,7 @@
             } else {
                 list.innerHTML = addresses.map(a => `
                     <div class="address-stat-card">
-                        <div class="address-stat-header">${a.address}</div>
+                        <div class="address-stat-header">${esc(a.address)}</div>
                         <div class="address-stat-info">
                             <span><span class="address-stat-value">${a.count}×</span> úklid</span>
                             <span><span class="address-stat-value">${a.total.toLocaleString('cs-CZ')} Kč</span> celkem</span>
@@ -1435,22 +1502,22 @@
             return `
                 <div class="cleaning-card ${type}">
                     <div class="cleaning-info">
-                        <div class="cleaning-address">${c.address}</div>
+                        <div class="cleaning-address">${esc(c.address)}</div>
                         <div class="cleaning-meta">
-                            <span>${formatDate(c.date)}${c.time ? ' v ' + c.time : ''}</span>
-                            ${c.people ? '<span>👥 ' + c.people + '</span>' : ''}
+                            <span>${formatDate(c.date)}${c.time ? ' v ' + esc(c.time) : ''}</span>
+                            ${c.people ? '<span>👥 ' + esc(c.people) + '</span>' : ''}
                             ${c.duration ? '<span>⏱ ' + formatDuration(c.duration) + '</span>' : ''}
-                            ${c.km ? '<span>🚗 ' + c.km + ' km</span>' : ''}
-                            ${c.expenses ? '<span>💸 -' + c.expenses + ' Kč</span>' : ''}
+                            ${c.km ? '<span>🚗 ' + esc(c.km) + ' km</span>' : ''}
+                            ${c.expenses ? '<span>💸 -' + esc(c.expenses) + ' Kč</span>' : ''}
                         </div>
-                        ${c.notes ? '<div class="cleaning-notes">📝 ' + c.notes + '</div>' : ''}
+                        ${c.notes ? '<div class="cleaning-notes">📝 ' + esc(c.notes) + '</div>' : ''}
                         ${missing && type !== 'paid' ? '<div class="missing-info">✏️ Doplň údaje</div>' : ''}
                     </div>
-                    <div class="cleaning-price">${c.price ? c.price.toLocaleString('cs-CZ') + ' Kč' : '—'}</div>
+                    <div class="cleaning-price">${c.price ? Number(c.price).toLocaleString('cs-CZ') + ' Kč' : '—'}</div>
                     <div class="card-buttons">
-                        ${type !== 'paid' ? '<button class="btn-icon btn-edit" data-action="edit" data-id="'+c.id+'">✏️</button>' : ''}
-                        ${type === 'unpaid' ? '<button class="btn-icon btn-paid" data-action="paid" data-id="'+c.id+'">✓</button>' : ''}
-                        ${type === 'planned' || type === 'paid' ? '<button class="btn-icon btn-delete" data-action="delete" data-id="'+c.id+'">×</button>' : ''}
+                        ${type !== 'paid' ? '<button class="btn-icon btn-edit" data-action="edit" data-id="'+esc(c.id)+'">✏️</button>' : ''}
+                        ${type === 'unpaid' ? '<button class="btn-icon btn-paid" data-action="paid" data-id="'+esc(c.id)+'">✓</button>' : ''}
+                        ${type === 'planned' || type === 'paid' ? '<button class="btn-icon btn-delete" data-action="delete" data-id="'+esc(c.id)+'">×</button>' : ''}
                     </div>
                 </div>
             `;
@@ -1460,12 +1527,25 @@
         let confirmCallback = null;
 
         function showConfirm(text, callback) {
+            document.getElementById('confirmNo').style.display = '';
+            document.getElementById('confirmYes').textContent = 'Ano';
             document.getElementById('confirmText').textContent = text;
             confirmCallback = callback;
             document.getElementById('confirmModal').classList.add('active');
         }
 
+        // Jen upozornění s tlačítkem OK
+        function showAlert(text) {
+            document.getElementById('confirmText').textContent = text;
+            confirmCallback = null;
+            document.getElementById('confirmNo').style.display = 'none';
+            document.getElementById('confirmYes').textContent = 'OK';
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
         function hideConfirm() {
+            document.getElementById('confirmNo').style.display = '';
+            document.getElementById('confirmYes').textContent = 'Ano';
             document.getElementById('confirmModal').classList.remove('active');
             confirmCallback = null;
         }
@@ -1510,7 +1590,7 @@
             const address = document.getElementById('clientAddress').value.trim();
             
             if (!name || !address) {
-                showConfirm('Vyplň jméno a adresu', function(){});
+                showAlert('Vyplň jméno a adresu');
                 return;
             }
             
@@ -1575,7 +1655,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'uklidy_zaloha_' + new Date().toISOString().split('T')[0] + '.json';
+            a.download = 'uklidy_zaloha_' + localISODate(0) + '.json';
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -1585,15 +1665,25 @@
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (data.cleanings) cleanings = data.cleanings;
-                    if (data.clients) clients = data.clients;
-                    if (data.kmPrice) kmPrice = data.kmPrice;
-                    save();
-                    document.getElementById('inputKmPrice').value = kmPrice;
-                    render();
-                    showConfirm('Data úspěšně importována!', function(){});
+                    const okCleanings = data && Array.isArray(data.cleanings) &&
+                        data.cleanings.every(c => c && typeof c === 'object' && c.id && c.date);
+                    const okClients = !data.clients || Array.isArray(data.clients);
+                    if (!okCleanings || !okClients) {
+                        showAlert('Tohle není platná záloha úklidů. Nic se nezměnilo.');
+                        return;
+                    }
+                    const n = data.cleanings.length;
+                    showConfirm('Načíst zálohu (' + pocetUklidu(n) + ')? Současná data (' + pocetUklidu(cleanings.length) + ') se přepíšou.', function() {
+                        cleanings = data.cleanings;
+                        clients = Array.isArray(data.clients) ? data.clients : clients;
+                        if (typeof data.kmPrice === 'number') kmPrice = data.kmPrice;
+                        save();
+                        document.getElementById('inputKmPrice').value = kmPrice;
+                        render();
+                        showAlert('Záloha načtena ✓');
+                    });
                 } catch(err) {
-                    showConfirm('Chyba při importu souboru', function(){});
+                    showAlert('Soubor se nepodařilo přečíst. Nic se nezměnilo.');
                 }
             };
             reader.readAsText(file);
@@ -1621,6 +1711,8 @@
             document.getElementById('groupClient').style.display = 'none';
             document.getElementById('groupTime').style.display = 'block';
             document.getElementById('btnSubmit').textContent = 'Uložit';
+            document.getElementById('btnDeleteInModal').style.display = 'block';
+            document.getElementById('modal').querySelector('.modal-content').scrollTop = 0;
             document.getElementById('modal').classList.add('active');
         }
 
@@ -1648,6 +1740,8 @@
         function openModal(mode) {
             currentMode = mode;
             currentEditId = null;
+            document.getElementById('btnDeleteInModal').style.display = 'none';
+            document.getElementById('modal').querySelector('.modal-content').scrollTop = 0;
             document.getElementById('inputClient').value = '';
             document.getElementById('inputAddress').value = '';
             document.getElementById('inputTime').value = '';
@@ -1661,7 +1755,7 @@
             // Naplnit select klienty
             const select = document.getElementById('inputClient');
             select.innerHTML = '<option value="">-- Vybrat klienta --</option>' + 
-                clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                clients.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
             
             if (mode === 'plan') {
                 document.getElementById('modalTitle').textContent = '📅 Naplánovat úklid';
@@ -1672,9 +1766,7 @@
                 document.getElementById('groupClient').style.display = 'block';
                 document.getElementById('groupTime').style.display = 'block';
                 // Tomorrow
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                document.getElementById('inputDate').value = tomorrow.toISOString().split('T')[0];
+                document.getElementById('inputDate').value = localISODate(1);
             } else {
                 document.getElementById('modalTitle').textContent = '✅ Přidat hotový úklid';
                 document.getElementById('btnSubmit').textContent = 'Přidat';
@@ -1684,7 +1776,7 @@
                 document.getElementById('groupClient').style.display = 'block';
                 document.getElementById('groupTime').style.display = 'block';
                 // Today
-                document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('inputDate').value = localISODate(0);
             }
             
             document.getElementById('modal').classList.add('active');
@@ -1699,7 +1791,7 @@
             const date = document.getElementById('inputDate').value;
             
             if (!address || !date) {
-                showConfirm('Vyplň adresu a datum', function(){});
+                showAlert('Vyplň adresu a datum');
                 return;
             }
 
@@ -1732,9 +1824,9 @@
                 }
             }
 
+            closeModal();
             save();
             render();
-            closeModal();
         }
 
         // Event listeners
@@ -1764,18 +1856,31 @@
 
         document.getElementById('btnSubmit').addEventListener('click', submitForm);
 
+        document.getElementById('btnDeleteInModal').addEventListener('click', function() {
+            const id = currentEditId;
+            if (!id) return;
+            showConfirm('Opravdu smazat tento úklid?', function() {
+                closeModal();
+                cleanings = cleanings.filter(x => x.id !== id);
+                save();
+                render();
+                showToast('deleted');
+            });
+        });
+
         document.getElementById('modal').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
         });
 
         document.getElementById('historyToggle').addEventListener('click', function() {
             const list = document.getElementById('historyList');
+            const label = document.getElementById('historyToggleText');
             if (list.style.display === 'none' || list.style.display === '') {
                 list.style.display = 'block';
-                this.textContent = '📜 Skrýt historii';
+                label.textContent = 'Skrýt historii';
             } else {
                 list.style.display = 'none';
-                this.innerHTML = '📜 Zobrazit historii (<span id="historyCount">' + cleanings.filter(c=>c.paid).length + '</span>)';
+                label.textContent = 'Zobrazit historii';
             }
         });
 
@@ -1832,8 +1937,11 @@
         document.getElementById('confirmNo').addEventListener('click', hideConfirm);
         
         document.getElementById('confirmYes').addEventListener('click', function() {
-            if (confirmCallback) confirmCallback();
+            const cb = confirmCallback;
             hideConfirm();
+            if (cb) {
+                try { cb(); } catch (e) { console.error(e); }
+            }
         });
 
         document.getElementById('confirmModal').addEventListener('click', function(e) {
