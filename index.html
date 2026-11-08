@@ -142,7 +142,7 @@
 
         .stat-row {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 8px;
             margin-top: 18px;
             padding-top: 16px;
@@ -782,10 +782,6 @@
         <div class="stat-hero-sub">K zaplacení: <strong id="statCount">0</strong></div>
         <div class="stat-row">
             <div class="stat">
-                <div class="stat-value" id="statKmMoney">0 Kč</div>
-                <div class="stat-label">Za km</div>
-            </div>
-            <div class="stat">
                 <div class="stat-value stat-expenses" id="statExpenses">0 Kč</div>
                 <div class="stat-label">Náklady</div>
             </div>
@@ -851,10 +847,6 @@
                         <span class="total-stat-value" id="totalHours">0h</span>
                     </div>
                     <div class="total-stat">
-                        <span class="total-stat-label">Celkem najeto</span>
-                        <span class="total-stat-value" id="totalKm">0 km</span>
-                    </div>
-                    <div class="total-stat">
                         <span class="total-stat-label">Průměr za měsíc</span>
                         <span class="total-stat-value" id="avgPerMonth">0 Kč</span>
                     </div>
@@ -888,14 +880,6 @@
                 <svg class="ico chev"><use href="#i-chevron"/></svg>
             </div>
             <div class="help-content" id="settingsContent">
-                <div class="setting-row">
-                    <label for="inputKmPrice">Cena za 1 km</label>
-                    <div class="setting-input">
-                        <input type="number" id="inputKmPrice" value="7" min="0" step="0.5">
-                        <span>Kč</span>
-                    </div>
-                </div>
-                <div class="setting-divider"></div>
                 <div class="setting-row">
                     <label>Záloha dat</label>
                     <div class="setting-buttons">
@@ -989,10 +973,6 @@
                 <label>Cena (Kč)</label>
                 <input type="number" id="inputPrice" placeholder="např. 500">
             </div>
-            <div class="form-group">
-                <label>Doprava (km)</label>
-                <input type="number" id="inputKm" placeholder="nepovinné" step="0.1">
-            </div>
             <div class="form-group" id="groupExpenses">
                 <label>Náklady (Kč)</label>
                 <input type="number" id="inputExpenses" placeholder="např. čisticí prostředky">
@@ -1041,10 +1021,6 @@
             <div class="form-group">
                 <label>Výchozí čas příchodu</label>
                 <input type="time" id="clientTime">
-            </div>
-            <div class="form-group">
-                <label>Vzdálenost (km)</label>
-                <input type="number" id="clientKm" placeholder="např. 5" step="0.1">
             </div>
             <div class="form-group">
                 <label>Poznámky</label>
@@ -1153,7 +1129,6 @@
                 kmPrice = (typeof idbData.kmPrice === 'number') ? idbData.kmPrice : 7;
             }
 
-            document.getElementById('inputKmPrice').value = kmPrice;
             dataLoaded = true;
             render();
         }
@@ -1283,7 +1258,7 @@
 
         // Čistý výdělek z jednoho úklidu: cena + doprava - náklady
         function netOf(c) {
-            return (c.price || 0) + Math.round((c.km || 0) * kmPrice) - (c.expenses || 0);
+            return (c.price || 0) - (c.expenses || 0);
         }
 
         // Zaokrouhlení km (aby nevznikalo 0.30000000000000004)
@@ -1385,14 +1360,11 @@
             // Stats (only unpaid)
             const totalMoney = unpaid.reduce((s,c) => s + (c.price || 0), 0);
             const totalExpenses = unpaid.reduce((s,c) => s + (c.expenses || 0), 0);
-            const totalKm = roundKm(unpaid.reduce((s,c) => s + (c.km || 0), 0));
-            const totalKmMoney = Math.round(totalKm * kmPrice);
-            const totalProfit = totalMoney + totalKmMoney - totalExpenses;
+            const totalProfit = totalMoney - totalExpenses;
             
             document.getElementById('statCount').textContent = unpaid.length;
             document.getElementById('statMoney').textContent = totalMoney.toLocaleString('cs-CZ') + ' Kč';
             document.getElementById('statExpenses').textContent = totalExpenses.toLocaleString('cs-CZ') + ' Kč';
-            document.getElementById('statKmMoney').textContent = totalKmMoney.toLocaleString('cs-CZ') + ' Kč';
             document.getElementById('statProfit').textContent = totalProfit.toLocaleString('cs-CZ') + ' Kč';
 
             // Total stats (all cleanings including paid)
@@ -1426,8 +1398,6 @@
             document.getElementById('totalHours').textContent = formatDuration(totalMin) || '0h';
             
             // Celkem najeto
-            const totalKmAll = roundKm(all.reduce((s,c) => s + (c.km || 0), 0));
-            document.getElementById('totalKm').textContent = totalKmAll.toLocaleString('cs-CZ') + ' km';
             
             // Průměr za měsíc
             if (paid.length > 0) {
@@ -1487,8 +1457,7 @@
                             ${[esc(c.address),
                                c.price ? esc(c.price) + ' Kč' : '',
                                c.duration ? esc(c.duration) + ' min' : '',
-                               c.time ? 'v ' + esc(c.time) : '',
-                               c.km ? formatKm(c.km) + ' km' : ''].filter(Boolean).join(' · ')}
+                               c.time ? 'v ' + esc(c.time) : ''].filter(Boolean).join(' · ')}
                         </div>
                         ${c.notes ? '<div class="client-notes">' + esc(c.notes) + '</div>' : ''}
                     </div>
@@ -1555,7 +1524,6 @@
             const meta = [
                 c.people ? '<span>' + icon('users', 'ico-sm') + esc(c.people) + ' lidi</span>' : '',
                 c.duration ? '<span>' + icon('timer', 'ico-sm') + formatDuration(c.duration) + '</span>' : '',
-                c.km ? '<span>' + icon('car', 'ico-sm') + formatKm(c.km) + ' km</span>' : '',
                 c.expenses ? '<span>' + icon('receipt', 'ico-sm') + '−' + esc(c.expenses) + ' Kč</span>' : ''
             ].join('');
             return `
@@ -1612,7 +1580,6 @@
             document.getElementById('clientPrice').value = '';
             document.getElementById('clientDuration').value = '';
             document.getElementById('clientTime').value = '';
-            document.getElementById('clientKm').value = '';
             document.getElementById('clientNotes').value = '';
             
             if (id) {
@@ -1624,7 +1591,6 @@
                     document.getElementById('clientPrice').value = c.price || '';
                     document.getElementById('clientDuration').value = c.duration || '';
                     document.getElementById('clientTime').value = c.time || '';
-                    document.getElementById('clientKm').value = c.km || '';
                     document.getElementById('clientNotes').value = c.notes || '';
                 }
             } else {
@@ -1654,7 +1620,6 @@
                 price: parseInt(document.getElementById('clientPrice').value) || 0,
                 duration: parseInt(document.getElementById('clientDuration').value) || 0,
                 time: document.getElementById('clientTime').value || '',
-                km: parseFloat(document.getElementById('clientKm').value) || 0,
                 notes: document.getElementById('clientNotes').value.trim()
             };
             
@@ -1693,7 +1658,6 @@
                 document.getElementById('inputPrice').value = c.price || '';
                 document.getElementById('inputDuration').value = c.duration || '';
                 document.getElementById('inputTime').value = c.time || '';
-                document.getElementById('inputKm').value = c.km || '';
             }
         }
 
@@ -1732,7 +1696,6 @@
                         clients = Array.isArray(data.clients) ? data.clients : clients;
                         if (typeof data.kmPrice === 'number') kmPrice = data.kmPrice;
                         save();
-                        document.getElementById('inputKmPrice').value = kmPrice;
                         render();
                         showAlert('Záloha načtena ✓');
                     });
@@ -1756,7 +1719,6 @@
             document.getElementById('inputPeople').value = c.people || '';
             document.getElementById('inputDuration').value = c.duration || '';
             document.getElementById('inputPrice').value = c.price || '';
-            document.getElementById('inputKm').value = c.km || '';
             document.getElementById('inputExpenses').value = c.expenses || '';
             document.getElementById('inputNotes').value = c.notes || '';
             document.getElementById('groupDuration').style.display = 'block';
@@ -1802,7 +1764,6 @@
             document.getElementById('inputPeople').value = '';
             document.getElementById('inputDuration').value = '';
             document.getElementById('inputPrice').value = '';
-            document.getElementById('inputKm').value = '';
             document.getElementById('inputExpenses').value = '';
             document.getElementById('inputNotes').value = '';
             
@@ -1856,7 +1817,6 @@
                 people: parseInt(document.getElementById('inputPeople').value) || 0,
                 duration: parseInt(document.getElementById('inputDuration').value) || 0,
                 price: parseInt(document.getElementById('inputPrice').value) || 0,
-                km: parseFloat(document.getElementById('inputKm').value) || 0,
                 expenses: parseInt(document.getElementById('inputExpenses').value) || 0,
                 notes: document.getElementById('inputNotes').value.trim()
             };
@@ -1903,7 +1863,6 @@
                     document.getElementById('inputPrice').value = c.price || '';
                     document.getElementById('inputDuration').value = c.duration || '';
                     document.getElementById('inputTime').value = c.time || '';
-                    document.getElementById('inputKm').value = c.km || '';
                 }
             }
         });
@@ -1980,12 +1939,6 @@
                 importData(e.target.files[0]);
                 e.target.value = '';
             }
-        });
-
-        document.getElementById('inputKmPrice').addEventListener('change', function() {
-            kmPrice = parseFloat(this.value) || 0;
-            save();
-            render();
         });
 
         document.getElementById('confirmNo').addEventListener('click', hideConfirm);
