@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Moje úklidy</title>
     <meta name="theme-color" content="#eef2f0">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Úklidy">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <style>
         /* Písmo Manrope (SIL OFL) je přímo ve složce fonts/, funguje i offline */
         @font-face {
@@ -418,6 +425,14 @@
             font-weight: 700;
             cursor: pointer;
         }
+
+        .install-hint {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .install-hint:empty { display: none; }
 
         .total-stats-grid {
             display: grid;
@@ -889,6 +904,14 @@
                     </div>
                 </div>
                 <input type="file" id="fileImport" accept=".json" style="display:none">
+                <div id="installRow">
+                    <div class="setting-divider"></div>
+                    <div class="setting-row">
+                        <label>Appka na ploše</label>
+                        <button class="setting-btn" id="btnInstall">Přidat na plochu</button>
+                    </div>
+                    <p class="install-hint" id="installHint"></p>
+                </div>
             </div>
         </div>
 
@@ -907,6 +930,7 @@
                 <p><strong>Náklady</strong> – čisticí prostředky apod. se odečtou od zisku.</p>
                 <p><strong>Klienti</strong> – stálí klienti s adresou, cenou a poznámkami. Zelené tlačítko ▶ rovnou vytvoří úklid s jejich údaji.</p>
                 <p><strong>Přehled podle adres</strong> – kolikrát jsi kde byla a kolik jsi tam vydělala.</p>
+                <p><strong>Přidat na plochu</strong> – v Nastavení. Appka pak má vlastní ikonu a funguje i bez internetu.</p>
                 <p><strong>Záloha</strong> – „Uložit“ stáhne všechna data do souboru, „Načíst“ je ze souboru vrátí.</p>
             </div>
         </div>
@@ -2001,6 +2025,57 @@
             
             await loadData();
         })();
+
+        // ---------- Appka na ploše (PWA) ----------
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW:', e));
+            });
+        }
+
+        let installPrompt = null;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        function updateInstallRow() {
+            const row = document.getElementById('installRow');
+            const btn = document.getElementById('btnInstall');
+            const hint = document.getElementById('installHint');
+            if (isStandalone) { row.style.display = 'none'; return; }
+            row.style.display = '';
+            if (installPrompt) {
+                btn.style.display = '';
+                hint.textContent = '';
+            } else if (isIOS) {
+                btn.style.display = 'none';
+                hint.textContent = 'V Safari klepni dole na Sdílet (čtvereček se šipkou) a vyber „Přidat na plochu“. Pozor: appka na ploše má na iPhonu vlastní paměť, takže nejdřív tady dej Záloha → Uložit a v appce na ploše pak Načíst.';
+            } else {
+                btn.style.display = 'none';
+                hint.textContent = 'V prohlížeči otevři menu (⋮ vpravo nahoře) a vyber „Přidat na plochu“ nebo „Nainstalovat aplikaci“.';
+            }
+        }
+
+        window.addEventListener('beforeinstallprompt', e => {
+            e.preventDefault();
+            installPrompt = e;
+            updateInstallRow();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            installPrompt = null;
+            document.getElementById('installRow').style.display = 'none';
+            showAlert('Hotovo, appka je na ploše ✓');
+        });
+
+        document.getElementById('btnInstall').addEventListener('click', async () => {
+            if (!installPrompt) return;
+            installPrompt.prompt();
+            await installPrompt.userChoice;
+            installPrompt = null;
+            updateInstallRow();
+        });
+
+        updateInstallRow();
     </script>
 </body>
 </html>
