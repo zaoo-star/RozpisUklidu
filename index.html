@@ -520,6 +520,44 @@
         .invoice-status { font-size: 0.9rem; font-weight: 700; margin-top: 4px; color: var(--gold); }
         .invoice-card.paid .invoice-status { color: var(--green); }
 
+        .badge-new {
+            display: inline-block;
+            margin-right: 8px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--blue);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            vertical-align: 2px;
+        }
+
+        .invoice-card.is-new { box-shadow: inset 0 0 0 2px #c9d6fb; }
+
+        .invoice-private {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .inv-unread {
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 10px 16px 0;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #e6ecfd;
+            color: #1c3f99;
+            font-weight: 700;
+            font-size: 0.92rem;
+        }
+
         .invoice-saved {
             display: inline-flex;
             align-items: center;
@@ -1219,6 +1257,7 @@
             <symbol id="i-calendar-plus" viewBox="0 0 24 24"><path d="M16 18h6"/><path d="M16 2v3"/><path d="M19 15v6"/><path d="M21 11.5V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h8.3"/><path d="M3 9h18"/><path d="M8 2v3"/></symbol>
             <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
             <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+            <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
             <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
             <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol>
             <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
@@ -1419,7 +1458,7 @@
                 <p><strong>Klienti</strong> – stálí klienti s adresou, cenou a poznámkami. Zelené tlačítko ▶ rovnou vytvoří úklid s jejich údaji.</p>
                 <p><strong>Přehled podle adres</strong> – kolikrát jsi kde byla a kolik jsi tam vydělala.</p>
                 <p><strong>Přidat na plochu</strong> – v Nastavení. Appka pak má vlastní ikonu a funguje i bez internetu.</p>
-                <p><strong>Faktury</strong> – nahoře přepni na „Faktury“, dej „Nová faktura“ a zaškrtni hotové úklidy. Faktury jsou za heslem – zadá se jednou na každém telefonu. Faktura se objeví mezi fakturami a vidí ji každý, kdo zná heslo. „Zaplaceno“ může dát jen ten, kdo fakturu vytvořil – faktura se pak přesune do Zaplacených a úklidy se samy označí jako zaplacené. „Zobrazit“ → „Stáhnout PDF“ fakturu uloží do telefonu (složka Stažené soubory). Faktury si schovávej aspoň 3 roky – u každé tvé faktury appka ukazuje, jestli ji už máš uloženou.</p>
+                <p><strong>Faktury</strong> – nahoře přepni na „Faktury“, dej „Nová faktura“ a zaškrtni hotové úklidy. Faktury jsou za heslem – zadá se jednou na každém telefonu. Faktura se objeví mezi fakturami a vidí ji každý, kdo zná heslo. „Zaplaceno“ může dát jen ten, kdo fakturu vytvořil – faktura se pak přesune do Zaplacených a úklidy se samy označí jako zaplacené. „Zobrazit“ → „Stáhnout PDF“ fakturu uloží do telefonu (složka Stažené soubory). Faktury si schovávej aspoň 3 roky – u každé tvé faktury appka ukazuje, jestli ji už máš uloženou. Při vytváření můžeš zvolit „Jen já“ – takovou fakturu ostatní neuvidí. Faktury, které jsi ještě neotevřela, mají štítek NOVÁ.</p>
                 <p><strong>Výdělek po měsících</strong> – kolik jsi který měsíc vydělala a souhrn za celý rok (hodí se k daňovému přiznání).</p>
                 <p><strong>Záloha</strong> – data jsou jen v telefonu. „Uložit“ stáhne všechna data do souboru, „Načíst“ je ze souboru vrátí. Když jsi zálohu dlouho neudělala, appka ti to připomene.</p>
             </div>
@@ -1461,6 +1500,11 @@
 
         <div class="inv-sync" id="invSync"></div>
 
+        <div class="inv-unread" id="invUnreadBar" style="display:none">
+            <span id="invUnreadText"></span>
+            <button class="pick-all" id="btnMarkAllSeen">Označit jako přečtené</button>
+        </div>
+
         <div id="invOpenSection" style="display:none">
             <div class="section-title">Čeká na proplacení <span class="section-count" id="invOpenCount"></span></div>
             <div class="cleaning-list" id="invOpenList"></div>
@@ -1493,7 +1537,7 @@
         </button>
     </div>
 
-    <div class="footer">Vytvořil Zaoo · verze <span id="appVersion">15</span></div>
+    <div class="footer">Vytvořil Zaoo · verze <span id="appVersion">16</span></div>
 
     <div class="sync-indicator" id="syncIndicator">
         <span class="sync-icon">🔄</span> <span class="sync-text">Ukládám...</span>
@@ -1604,6 +1648,11 @@
             <div class="pick-summary">
                 <span>Vybráno <strong id="pickTotal">0 Kč</strong></span>
                 <button class="pick-all" id="btnPickAll">Vybrat vše</button>
+            </div>
+            <div class="pay-label">Kdo ji uvidí</div>
+            <div class="pay-choice" role="radiogroup" aria-label="Kdo fakturu uvidí">
+                <label><input type="radio" name="invVisibility" value="vsichni" checked><span>Všichni s heslem</span></label>
+                <label><input type="radio" name="invVisibility" value="ja"><span>Jen já</span></label>
             </div>
             <div class="pay-label">Způsob platby</div>
             <div class="pay-choice" role="radiogroup" aria-label="Způsob platby">
@@ -2867,6 +2916,41 @@
             return !!invSettings.dataKey;
         }
 
+        // soukromé faktury: místo odvozené z náhodného ID telefonu – ostatní ho neznají
+        function privatePath() {
+            return 'faktury/soukrome-' + myId();
+        }
+
+        function pathFor(inv) {
+            return (inv && inv.private ? privatePath() : invPath()) + '/' + encodeURIComponent(inv.id);
+        }
+
+        // stáhne společné i moje soukromé faktury
+        async function fetchAllInvoices() {
+            const [shared, mine] = await Promise.all([
+                dbRequest('GET', invPath()),
+                dbRequest('GET', privatePath())
+            ]);
+            const list = v => v && typeof v === 'object' ? Object.values(v).filter(x => x && x.id) : [];
+            return list(shared).map(x => { x.private = false; return x; })
+                .concat(list(mine).map(x => { x.private = true; return x; }));
+        }
+
+        // ---------- přečtené / nové ----------
+        function seenSet() {
+            try { return new Set(JSON.parse(localStorage.getItem('invSeen') || '[]')); } catch (e) { return new Set(); }
+        }
+
+        function markSeen(ids) {
+            const set = seenSet();
+            [].concat(ids).forEach(id => set.add(id));
+            try { localStorage.setItem('invSeen', JSON.stringify([...set])); } catch (e) {}
+        }
+
+        function isNew(inv) {
+            return !isMine(inv) && !seenSet().has(inv.id);
+        }
+
         function invPath() {
             return 'faktury/' + invSettings.dataKey;
         }
@@ -2959,8 +3043,7 @@
             const syncEl = document.getElementById('invSync');
             try {
                 await migrateOldKey();
-                const data = await dbRequest('GET', invPath());
-                invoices = data && typeof data === 'object' ? Object.values(data).filter(x => x && x.id) : [];
+                invoices = await fetchAllInvoices();
                 try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
 
                 let changed = false;
@@ -3005,11 +3088,12 @@
                 : 'Splatnost ' + formatDate(inv.dueDate);
             const id = esc(inv.id);
             return `
-                <div class="invoice-card ${paid ? 'paid' : ''}">
+                <div class="invoice-card ${paid ? 'paid' : ''} ${isNew(inv) ? 'is-new' : ''}">
                     <div class="invoice-top">
-                        <span class="invoice-number">${title}</span>
+                        <span class="invoice-number">${isNew(inv) ? '<span class="badge-new">NOVÁ</span>' : ''}${title}</span>
                         <span class="invoice-total">${Number(inv.total || 0).toLocaleString('cs-CZ')} Kč</span>
                     </div>
+                    ${inv.private ? '<div class="invoice-private">' + icon('lock', 'ico-sm') + 'Jen pro tebe – ostatní ji nevidí</div>' : ''}
                     ${inv.supplier && inv.supplier.name ? '<div class="invoice-from">Od: ' + esc(inv.supplier.name) + (isMine(inv) ? ' (ty)' : '') + '</div>' : ''}
                     <div class="invoice-sub">${esc(formatPeriod(inv.items || []))} · ${pocetUklidu(n)} · ${inv.paymentMethod === 'hotove' ? 'hotově' : 'převodem'}</div>
                     <div class="invoice-status">${status}</div>
@@ -3053,7 +3137,12 @@
             document.getElementById('invPaidCount').textContent = paid.length;
             document.getElementById('invOpenList').innerHTML = open.map(invoiceCardHTML).join('');
             document.getElementById('invPaidList').innerHTML = paid.map(invoiceCardHTML).join('');
-            document.getElementById('tabInvBadge').textContent = open.length || '';
+            const unread = invoices.filter(isNew).length;
+            document.getElementById('tabInvBadge').textContent = unread || '';
+            const bar = document.getElementById('invUnreadBar');
+            bar.style.display = unread ? 'flex' : 'none';
+            document.getElementById('invUnreadText').textContent = unread === 1 ? '1 nová faktura od tvé poslední návštěvy'
+                : unread + (unread <= 4 ? ' nové faktury' : ' nových faktur') + ' od tvé poslední návštěvy';
             if (currentView === 'faktury') {
                 document.getElementById('barFaktury').style.display = issuer ? '' : 'none';
             }
@@ -3163,6 +3252,7 @@
             const inv = invoices.find(x => x.id === id);
             if (!inv) return;
             viewedInvoiceId = id;
+            if (isNew(inv)) { markSeen(id); renderInvoices(); }
             document.getElementById('invoiceDoc').innerHTML = invoiceDocHTML(inv);
             document.getElementById('viewerPaid').textContent = inv.status === 'paid'
                 ? 'Zaplaceno' + (inv.paidAt ? ' ' + new Date(inv.paidAt).toLocaleDateString('cs-CZ') : '') : '';
@@ -3184,6 +3274,10 @@
         }
 
         document.getElementById('btnViewerBack').addEventListener('click', closeInvoiceViewer);
+        document.getElementById('btnMarkAllSeen').addEventListener('click', function() {
+            markSeen(invoices.map(i => i.id));
+            renderInvoices();
+        });
         // ---------- PDF faktury ----------
         let pdfLibsPromise = null;
 
@@ -3496,6 +3590,8 @@
             }
             const lastPay = invSettings.lastPayMethod === 'hotove' ? 'hotove' : 'prevod';
             document.querySelectorAll('input[name="payMethod"]').forEach(i => { i.checked = i.value === lastPay; });
+            const lastVis = invSettings.lastVisibility === 'ja' ? 'ja' : 'vsichni';
+            document.querySelectorAll('input[name="invVisibility"]').forEach(i => { i.checked = i.value === lastVis; });
             box.innerHTML =
                 (unpaid.length ? '<div class="pick-group">Nezaplacené</div>' + unpaid.map(c => pickRowHTML(c, true)).join('') : '') +
                 (paid.length ? '<div class="pick-group">Už zaplacené</div><div class="pick-group-hint">Zaškrtni, pokud na ně potřebuješ fakturu.</div>' +
@@ -3519,8 +3615,7 @@
             btn.textContent = 'Ukládám…';
             try {
                 // číslo faktury: rok + pořadí (2026-001), podle faktur na internetu
-                const remote = await dbRequest('GET', invPath());
-                const existing = remote && typeof remote === 'object' ? Object.values(remote) : [];
+                const existing = await fetchAllInvoices();
                 const year = localISODate(0).slice(0, 4);
                 const maxSeq = existing.filter(isMine)
                     .map(i => String(i && i.number || ''))
@@ -3553,13 +3648,17 @@
                     status: allPaid ? 'paid' : 'open',
                     paidAt: allPaid ? new Date().toISOString() : null
                 };
-                await dbRequest('PUT', invPath() + '/' + id, inv);
+                const isPrivate = (document.querySelector('input[name="invVisibility"]:checked') || {}).value === 'ja';
+                await dbRequest('PUT', (isPrivate ? privatePath() : invPath()) + '/' + id, inv);
+                inv.private = isPrivate;
+                markSeen(id);
+                invSettings.lastVisibility = isPrivate ? 'ja' : 'vsichni';
                 invSettings.lastPayMethod = inv.paymentMethod;
                 saveInvoiceSettings();
                 chosen.forEach(c => { c.invoiceId = id; c.invoiceNumber = number; });
                 save();
                 render();
-                invoices = existing.filter(x => x && x.id).concat([inv]);
+                invoices = existing.concat([inv]);
                 try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
                 closeInvoiceModal();
                 renderInvoices();
@@ -3608,7 +3707,7 @@
             showConfirm('Faktura ' + inv.number + ' na ' + Number(inv.total || 0).toLocaleString('cs-CZ') + ' Kč je zaplacená?', async function() {
                 const patch = {status: 'paid', paidAt: new Date().toISOString()};
                 try {
-                    await dbRequest('PATCH', invPath() + '/' + encodeURIComponent(id), patch);
+                    await dbRequest('PATCH', pathFor(inv), patch);
                     Object.assign(inv, patch);
                     try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
                     propagatePaid();
@@ -3678,7 +3777,7 @@
             const btn = document.getElementById('btnDeleteInvConfirm');
             btn.disabled = true;
             try {
-                await dbRequest('DELETE', invPath() + '/' + encodeURIComponent(id));
+                await dbRequest('DELETE', pathFor(inv));
                 cleanings.forEach(c => { if (c.invoiceId === id) { delete c.invoiceId; delete c.invoiceNumber; } });
                 save();
                 render();
