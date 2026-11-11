@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "faktury": {
+      "$klic": {
+        ".read": "$klic.length >= 20",
+        ".write": "$klic.length >= 20",
+        "$faktura": {
+          ".validate": "newData.hasChildren(['id', 'number', 'items', 'total', 'status'])"
+        }
+      }
+    }
+  }
+}
