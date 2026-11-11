@@ -594,6 +594,11 @@
         .form-section-title:first-of-type { margin-top: 0; }
 
         .form-hint { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+        .form-hint.ok { color: var(--green); font-weight: 600; }
+        .form-hint.err { color: var(--red); font-weight: 600; }
+        .ico-row { display: flex; gap: 8px; }
+        .ico-row input { flex: 1; min-width: 0; }
+        .ico-row .btn-soft { flex-shrink: 0; height: auto; }
 
         .check-row {
             display: flex;
@@ -1425,6 +1430,14 @@
 
             <div class="form-section-title">Moje údaje (dodavatel)</div>
             <div class="form-group">
+                <label for="supIco">IČO</label>
+                <div class="ico-row">
+                    <input type="text" id="supIco" inputmode="numeric" maxlength="8" placeholder="nepovinné">
+                    <button type="button" class="btn-soft" id="btnAresSup">Načíst z ARES</button>
+                </div>
+                <div class="form-hint" id="aresSupHint">Napiš IČO a appka doplní jméno a adresu z registru. Bez IČO se doklad jmenuje „Vyúčtování“.</div>
+            </div>
+            <div class="form-group">
                 <label for="supName">Jméno a příjmení *</label>
                 <input type="text" id="supName" autocomplete="name">
             </div>
@@ -1433,18 +1446,22 @@
                 <textarea id="supAddress" rows="2" placeholder="Ulice 12, 685 01 Bučovice"></textarea>
             </div>
             <div class="form-group">
-                <label for="supIco">IČO</label>
-                <input type="text" id="supIco" inputmode="numeric" placeholder="nepovinné">
-                <div class="form-hint">Bez IČO se doklad jmenuje „Vyúčtování“ místo „Faktura“.</div>
-            </div>
-            <div class="form-group">
                 <label for="supAccount">Číslo účtu *</label>
                 <input type="text" id="supAccount" placeholder="např. 123456789/0800">
                 <div class="form-hint">Podle něj se na faktuře vytvoří QR kód pro platbu.</div>
             </div>
             <label class="check-row"><input type="checkbox" id="supVatNote" checked> Nejsem plátce DPH</label>
+            <label class="check-row"><input type="checkbox" id="supTradeNote" checked> Fyzická osoba zapsaná v živnostenském rejstříku</label>
 
             <div class="form-section-title">Komu fakturuju (odběratel)</div>
+            <div class="form-group">
+                <label for="cusIco">IČO</label>
+                <div class="ico-row">
+                    <input type="text" id="cusIco" inputmode="numeric" maxlength="8" placeholder="nepovinné">
+                    <button type="button" class="btn-soft" id="btnAresCus">Načíst z ARES</button>
+                </div>
+                <div class="form-hint" id="aresCusHint">Napiš IČO firmy a appka doplní název, adresu i DIČ.</div>
+            </div>
             <div class="form-group">
                 <label for="cusName">Jméno nebo firma *</label>
                 <input type="text" id="cusName">
@@ -1454,8 +1471,8 @@
                 <textarea id="cusAddress" rows="2"></textarea>
             </div>
             <div class="form-group">
-                <label for="cusIco">IČO</label>
-                <input type="text" id="cusIco" inputmode="numeric" placeholder="nepovinné">
+                <label for="cusDic">DIČ</label>
+                <input type="text" id="cusDic" placeholder="nepovinné">
             </div>
             <div class="form-group">
                 <label for="invDueDays">Splatnost (dní)</label>
@@ -2743,6 +2760,9 @@
             document.getElementById('supIco').value = s.ico || '';
             document.getElementById('supAccount').value = s.account || '';
             document.getElementById('supVatNote').checked = invSettings.vatNote !== false;
+            document.getElementById('supTradeNote').checked = invSettings.tradeNote !== false;
+            document.getElementById('cusDic').value = c.dic || '';
+            resetAresHints();
             document.getElementById('cusName').value = c.name || '';
             document.getElementById('cusAddress').value = c.address || '';
             document.getElementById('cusIco').value = c.ico || '';
@@ -2763,16 +2783,82 @@
                 return;
             }
             invSettings.supplier = {name: v('supName'), address: v('supAddress'), ico: v('supIco'), account: v('supAccount')};
-            invSettings.customer = {name: v('cusName'), address: v('cusAddress'), ico: v('cusIco')};
+            invSettings.customer = {name: v('cusName'), address: v('cusAddress'), ico: v('cusIco'), dic: v('cusDic')};
             const due = parseInt(v('invDueDays'), 10);
             invSettings.dueDays = isNaN(due) || due < 0 ? 14 : due;
             invSettings.vatNote = document.getElementById('supVatNote').checked;
+            invSettings.tradeNote = document.getElementById('supTradeNote').checked;
+            for (const [id, label] of [['supIco', 'Tvoje IČO'], ['cusIco', 'IČO odběratele']]) {
+                const ico = v(id);
+                if (ico && !icoValid(ico)) { showAlert(label + ' nevypadá správně, zkontroluj číslice.'); return; }
+            }
             if (!invSettings.key) invSettings.key = newSecretKey();
             saveInvoiceSettings();
             closeInvSettings();
             renderInvoices();
             showToastText('Údaje uloženy ✓');
         }
+
+        // ---------- ARES: doplnění údajů podle IČO ----------
+        function icoValid(ico) {
+            const s = String(ico).replace(/\s/g, '');
+            if (!/^\d{8}$/.test(s)) return false;
+            let sum = 0;
+            for (let i = 0; i < 7; i++) sum += (+s[i]) * (8 - i);
+            const c = (11 - (sum % 11)) % 10;
+            return c === +s[7];
+        }
+
+        function aresAddress(sidlo) {
+            if (!sidlo) return '';
+            const cislo = [sidlo.cisloDomovni, sidlo.cisloOrientacni ? sidlo.cisloOrientacni + (sidlo.cisloOrientacniPismeno || '') : '']
+                .filter(Boolean).join('/');
+            const ulice = sidlo.nazevUlice ? sidlo.nazevUlice + ' ' + cislo : (sidlo.nazevCastiObce || sidlo.nazevObce || '') + ' ' + cislo;
+            const psc = sidlo.psc ? String(sidlo.psc).replace(/^(\d{3})(\d{2})$/, '$1 $2') : '';
+            const obec = sidlo.nazevMestskeCastiObvodu && /^Praha/.test(sidlo.nazevMestskeCastiObvodu) ? sidlo.nazevMestskeCastiObvodu : (sidlo.nazevObce || '');
+            if (!cislo || !obec) return sidlo.textovaAdresa || '';
+            return ulice.trim() + '\n' + (psc + ' ' + obec).trim();
+        }
+
+        function resetAresHints() {
+            const a = document.getElementById('aresSupHint'), b = document.getElementById('aresCusHint');
+            a.className = 'form-hint'; a.textContent = 'Napiš IČO a appka doplní jméno a adresu z registru. Bez IČO se doklad jmenuje „Vyúčtování“.';
+            b.className = 'form-hint'; b.textContent = 'Napiš IČO firmy a appka doplní název, adresu i DIČ.';
+        }
+
+        async function aresLookup(who) {
+            const pre = who === 'sup' ? 'sup' : 'cus';
+            const hint = document.getElementById(who === 'sup' ? 'aresSupHint' : 'aresCusHint');
+            const btn = document.getElementById(who === 'sup' ? 'btnAresSup' : 'btnAresCus');
+            const ico = document.getElementById(pre + 'Ico').value.replace(/\s/g, '');
+            document.getElementById(pre + 'Ico').value = ico;
+            const fail = t => { hint.className = 'form-hint err'; hint.textContent = t; };
+            if (!icoValid(ico)) return fail('Tohle IČO nevypadá správně (8 číslic, kontrolní číslo nesedí).');
+            btn.disabled = true;
+            hint.className = 'form-hint'; hint.textContent = 'Hledám v ARES…';
+            try {
+                const res = await fetch('https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/' + ico);
+                if (res.status === 404) return fail('Firma s tímhle IČO v registru není.');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const j = await res.json();
+                document.getElementById(pre + 'Name').value = j.obchodniJmeno || '';
+                document.getElementById(pre + 'Address').value = aresAddress(j.sidlo);
+                if (who === 'cus') document.getElementById('cusDic').value = j.dic || '';
+                if (who === 'sup') {
+                    // 101 = fyzická osoba podnikající (živnostník)
+                    document.getElementById('supTradeNote').checked = String(j.pravniForma) === '101';
+                }
+                hint.className = 'form-hint ok';
+                hint.textContent = 'Doplněno z ARES: ' + (j.obchodniJmeno || '');
+            } catch (e) {
+                fail(navigator.onLine ? 'ARES teď neodpovídá, vyplň údaje ručně.' : 'Nejsi připojená k internetu.');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('btnAresSup').addEventListener('click', () => aresLookup('sup'));
+        document.getElementById('btnAresCus').addEventListener('click', () => aresLookup('cus'));
 
         document.getElementById('btnInvSetup').addEventListener('click', openInvSettings);
         document.getElementById('btnInvSettings').addEventListener('click', openInvSettings);
@@ -2875,6 +2961,7 @@
                     supplier: invSettings.supplier,
                     customer: invSettings.customer,
                     vatNote: invSettings.vatNote !== false,
+                    tradeNote: invSettings.tradeNote !== false && !!(invSettings.supplier && invSettings.supplier.ico),
                     items: chosen.map(c => ({
                         date: c.date,
                         address: c.address || '',

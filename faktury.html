@@ -431,12 +431,14 @@
                         ${s.address ? '<div class="party-line">' + esc(s.address) + '</div>' : ''}
                         ${s.ico ? '<div>IČO: ' + esc(s.ico) + '</div>' : ''}
                         ${inv.vatNote ? '<div>Nejsem plátce DPH.</div>' : ''}
+                        ${inv.tradeNote ? '<div>Fyzická osoba zapsaná v živnostenském rejstříku.</div>' : ''}
                     </div>
                     <div>
                         <div class="party-label">Odběratel</div>
                         <div class="party-name">${esc(c.name)}</div>
                         ${c.address ? '<div class="party-line">' + esc(c.address) + '</div>' : ''}
                         ${c.ico ? '<div>IČO: ' + esc(c.ico) + '</div>' : ''}
+                        ${c.dic ? '<div>DIČ: ' + esc(c.dic) + '</div>' : ''}
                     </div>
                 </div>
                 <div class="facts">
