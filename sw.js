@@ -1,5 +1,5 @@
 // Moje úklidy – offline režim. Při změně souborů zvyš číslo verze.
-const CACHE = 'uklidy-v13';
+const CACHE = 'uklidy-v14';
 const FILES = [
   './',
   './index.html',
@@ -15,7 +15,12 @@ const FILES = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // cache: 'reload' = vždy čerstvě ze serveru, ne z HTTP mezipaměti prohlížeče
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(FILES.map(f => new Request(f, {cache: 'reload'}))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
@@ -33,7 +38,7 @@ self.addEventListener('fetch', e => {
   // Stránka: nejdřív internet (ať jsou vidět nové verze), bez signálu z paměti
   if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(req)
+      fetch(req, {cache: 'no-store'})
         .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put('./index.html', copy)); return res; })
         .catch(() => caches.match('./index.html'))
     );
