@@ -1493,7 +1493,7 @@
         </button>
     </div>
 
-    <div class="footer">Vytvořil Zaoo · verze <span id="appVersion">14</span></div>
+    <div class="footer">Vytvořil Zaoo · verze <span id="appVersion">15</span></div>
 
     <div class="sync-indicator" id="syncIndicator">
         <span class="sync-icon">🔄</span> <span class="sync-text">Ukládám...</span>
@@ -1612,6 +1612,23 @@
             </div>
             <div id="pickList"></div>
             <button class="submit-btn" id="btnCreateInvoice">Vytvořit fakturu</button>
+        </div>
+    </div>
+
+    <!-- Smazání faktury (heslo) -->
+    <div class="modal" id="deleteInvModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title" id="deleteInvTitle">Smazat fakturu</span>
+                <button class="close-btn" id="btnCloseDeleteInv" aria-label="Zavřít"><svg class="ico"><use href="#i-x"/></svg></button>
+            </div>
+            <p class="inv-panel-text" id="deleteInvText"></p>
+            <div class="form-group">
+                <label for="deleteInvPassword">Heslo pro mazání</label>
+                <input type="password" id="deleteInvPassword" inputmode="numeric" autocomplete="off">
+                <div class="form-hint" id="deleteInvHint"></div>
+            </div>
+            <button class="delete-link-btn" id="btnDeleteInvConfirm">Smazat fakturu</button>
         </div>
     </div>
 
@@ -3000,7 +3017,7 @@
                         ? '<div class="invoice-saved">' + icon('check', 'ico-sm') + 'Uloženo v telefonu</div>'
                         : '<button class="invoice-save-link" data-inv-action="download" data-inv-id="' + id + '">' + icon('download', 'ico-sm') + 'Uložit do telefonu</button>') : ''}
                     <div class="invoice-buttons">
-                        ${!paid && isMine(inv) ? '<button class="btn-icon btn-delete" data-inv-action="delete" data-inv-id="' + id + '" aria-label="Smazat fakturu">' + icon('trash') + '</button>' : ''}
+                        ${isMine(inv) ? '<button class="btn-icon btn-delete" data-inv-action="delete" data-inv-id="' + id + '" aria-label="Smazat fakturu">' + icon('trash') + '</button>' : ''}
                         <button class="btn-soft" data-inv-action="view" data-inv-id="${id}">Zobrazit</button>
                         ${!paid && isMine(inv) ? '<button class="btn-icon btn-paid" data-inv-action="paid" data-inv-id="' + id + '">' + icon('check') + 'Zaplaceno</button>' : ''}
                     </div>
@@ -3616,24 +3633,72 @@
             if (pd) { markInvoicePaid(pd.dataset.invId); return; }
             const b = e.target.closest('[data-inv-action="delete"]');
             if (!b) return;
-            const id = b.dataset.invId;
-            const inv = invoices.find(x => x.id === id);
-            if (!inv || !isMine(inv)) return;
-            showConfirm('Smazat fakturu ' + inv.number + '? Úklidy z ní se zase objeví jako nezaplacené bez faktury.', async function() {
-                try {
-                    await dbRequest('DELETE', invPath() + '/' + id);
-                    cleanings.forEach(c => { if (c.invoiceId === id) { delete c.invoiceId; delete c.invoiceNumber; } });
-                    save();
-                    render();
-                    invoices = invoices.filter(x => x.id !== id);
-                    try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
-                    renderInvoices();
-                    showToastText('Faktura smazána');
-                } catch (err) {
-                    showAlert(dbErrorText(err) + ' Faktura se nesmazala.');
-                }
-            });
+            const inv = invoices.find(x => x.id === b.dataset.invId);
+            if (inv && isMine(inv)) openDeleteInvoice(inv);
         });
+
+        // ---------- mazání faktury za heslem ----------
+        // v kódu je jen otisk hesla pro mazání
+        const DELETE_CHECK = '16b83af925e7003b0240c726d609f8c9dd43cea3ddf2e9e827506a5ad5da7b27';
+        let deletingInvoiceId = null;
+
+        function openDeleteInvoice(inv) {
+            deletingInvoiceId = inv.id;
+            const paid = inv.status === 'paid';
+            document.getElementById('deleteInvTitle').textContent = 'Smazat ' + docTitle(inv).toLowerCase() + ' ' + inv.number;
+            document.getElementById('deleteInvText').textContent = paid
+                ? 'Faktura je už zaplacená. Po smazání zmizí všem. Úklidy z ní zůstanou zaplacené a půjdou dát na novou fakturu. Máš ji uloženou v PDF?'
+                : 'Faktura zmizí všem. Úklidy z ní se uvolní a půjdou dát na novou fakturu.';
+            const input = document.getElementById('deleteInvPassword');
+            input.value = '';
+            const h = document.getElementById('deleteInvHint');
+            h.className = 'form-hint';
+            h.textContent = '';
+            document.getElementById('deleteInvModal').classList.add('active');
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function closeDeleteInvoice() {
+            document.getElementById('deleteInvModal').classList.remove('active');
+            deletingInvoiceId = null;
+        }
+
+        async function confirmDeleteInvoice() {
+            const id = deletingInvoiceId;
+            const inv = invoices.find(x => x.id === id);
+            if (!inv || !isMine(inv)) { closeDeleteInvoice(); return; }
+            const h = document.getElementById('deleteInvHint');
+            const pw = document.getElementById('deleteInvPassword').value.trim();
+            if (await sha256hex('moje-uklidy-smazat:' + pw) !== DELETE_CHECK) {
+                h.className = 'form-hint err';
+                h.textContent = 'Špatné heslo pro mazání.';
+                document.getElementById('deleteInvPassword').select();
+                return;
+            }
+            const btn = document.getElementById('btnDeleteInvConfirm');
+            btn.disabled = true;
+            try {
+                await dbRequest('DELETE', invPath() + '/' + encodeURIComponent(id));
+                cleanings.forEach(c => { if (c.invoiceId === id) { delete c.invoiceId; delete c.invoiceNumber; } });
+                save();
+                render();
+                invoices = invoices.filter(x => x.id !== id);
+                try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
+                closeDeleteInvoice();
+                renderInvoices();
+                showToastText('Faktura ' + inv.number + ' smazána');
+            } catch (err) {
+                h.className = 'form-hint err';
+                h.textContent = dbErrorText(err) + ' Faktura se nesmazala.';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('btnDeleteInvConfirm').addEventListener('click', confirmDeleteInvoice);
+        document.getElementById('btnCloseDeleteInv').addEventListener('click', closeDeleteInvoice);
+        document.getElementById('deleteInvPassword').addEventListener('keydown', e => { if (e.key === 'Enter') confirmDeleteInvoice(); });
+        document.getElementById('deleteInvModal').addEventListener('click', function(e) { if (e.target === this) closeDeleteInvoice(); });
 
         // aktualizace po návratu do appky
         document.addEventListener('visibilitychange', function() {
