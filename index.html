@@ -520,6 +520,32 @@
         .invoice-status { font-size: 0.9rem; font-weight: 700; margin-top: 4px; color: var(--gold); }
         .invoice-card.paid .invoice-status { color: var(--green); }
 
+        .invoice-saved {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .invoice-save-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 999px;
+            background: #fff4dc;
+            color: #7a4a05;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
         .invoice-buttons {
             display: flex;
             justify-content: flex-end;
@@ -1393,7 +1419,7 @@
                 <p><strong>Klienti</strong> – stálí klienti s adresou, cenou a poznámkami. Zelené tlačítko ▶ rovnou vytvoří úklid s jejich údaji.</p>
                 <p><strong>Přehled podle adres</strong> – kolikrát jsi kde byla a kolik jsi tam vydělala.</p>
                 <p><strong>Přidat na plochu</strong> – v Nastavení. Appka pak má vlastní ikonu a funguje i bez internetu.</p>
-                <p><strong>Faktury</strong> – nahoře přepni na „Faktury“, dej „Nová faktura“ a zaškrtni hotové úklidy. Faktury jsou za heslem – zadá se jednou na každém telefonu. Faktura se objeví mezi fakturami a vidí ji každý, kdo zná heslo. „Zaplaceno“ může dát jen ten, kdo fakturu vytvořil – faktura se pak přesune do Zaplacených a úklidy se samy označí jako zaplacené. „Zobrazit“ → „Uložit PDF“ fakturu stáhne.</p>
+                <p><strong>Faktury</strong> – nahoře přepni na „Faktury“, dej „Nová faktura“ a zaškrtni hotové úklidy. Faktury jsou za heslem – zadá se jednou na každém telefonu. Faktura se objeví mezi fakturami a vidí ji každý, kdo zná heslo. „Zaplaceno“ může dát jen ten, kdo fakturu vytvořil – faktura se pak přesune do Zaplacených a úklidy se samy označí jako zaplacené. „Zobrazit“ → „Stáhnout PDF“ fakturu uloží do telefonu (složka Stažené soubory). Faktury si schovávej aspoň 3 roky – u každé tvé faktury appka ukazuje, jestli ji už máš uloženou.</p>
                 <p><strong>Výdělek po měsících</strong> – kolik jsi který měsíc vydělala a souhrn za celý rok (hodí se k daňovému přiznání).</p>
                 <p><strong>Záloha</strong> – data jsou jen v telefonu. „Uložit“ stáhne všechna data do souboru, „Načíst“ je ze souboru vrátí. Když jsi zálohu dlouho neudělala, appka ti to připomene.</p>
             </div>
@@ -2310,8 +2336,15 @@
         // Custom confirm
         let confirmCallback = null;
 
+        function showChoice(text, yesLabel, noLabel, callback) {
+            showConfirm(text, callback);
+            document.getElementById('confirmYes').textContent = yesLabel;
+            document.getElementById('confirmNo').textContent = noLabel;
+        }
+
         function showConfirm(text, callback) {
             document.getElementById('confirmNo').style.display = '';
+            document.getElementById('confirmNo').textContent = 'Ne';
             document.getElementById('confirmYes').textContent = 'Ano';
             document.getElementById('confirmText').textContent = text;
             confirmCallback = callback;
@@ -2963,6 +2996,9 @@
                     ${inv.supplier && inv.supplier.name ? '<div class="invoice-from">Od: ' + esc(inv.supplier.name) + (isMine(inv) ? ' (ty)' : '') + '</div>' : ''}
                     <div class="invoice-sub">${esc(formatPeriod(inv.items || []))} · ${pocetUklidu(n)} · ${inv.paymentMethod === 'hotove' ? 'hotově' : 'převodem'}</div>
                     <div class="invoice-status">${status}</div>
+                    ${isMine(inv) ? (isDownloaded(inv.id)
+                        ? '<div class="invoice-saved">' + icon('check', 'ico-sm') + 'Uloženo v telefonu</div>'
+                        : '<button class="invoice-save-link" data-inv-action="download" data-inv-id="' + id + '">' + icon('download', 'ico-sm') + 'Uložit do telefonu</button>') : ''}
                     <div class="invoice-buttons">
                         ${!paid && isMine(inv) ? '<button class="btn-icon btn-delete" data-inv-action="delete" data-inv-id="' + id + '" aria-label="Smazat fakturu">' + icon('trash') + '</button>' : ''}
                         <button class="btn-soft" data-inv-action="view" data-inv-id="${id}">Zobrazit</button>
@@ -3115,8 +3151,8 @@
                 ? 'Zaplaceno' + (inv.paidAt ? ' ' + new Date(inv.paidAt).toLocaleDateString('cs-CZ') : '') : '';
             document.getElementById('btnViewerShare').style.display = canShareFiles() ? '' : 'none';
             document.getElementById('viewerHint').textContent = canShareFiles()
-                ? '„Stáhnout PDF“ uloží fakturu do telefonu. „Poslat“ ji rovnou pošle třeba přes WhatsApp nebo e-mail.'
-                : '„Stáhnout PDF“ uloží fakturu do počítače nebo telefonu jako soubor.';
+                ? '„Stáhnout PDF“ uloží fakturu do telefonu do složky Stažené soubory (Download). Faktury si schovávej aspoň 3 roky. „Poslat“ ji rovnou pošle třeba přes WhatsApp nebo e-mail.'
+                : '„Stáhnout PDF“ uloží fakturu do složky Stažené soubory. Faktury si schovávej aspoň 3 roky.';
             const v = document.getElementById('invoiceViewer');
             v.classList.add('active');
             v.setAttribute('aria-hidden', 'false');
@@ -3190,12 +3226,12 @@
             return new File([pdf.output('blob')], invoiceFileName(inv), {type: 'application/pdf'});
         }
 
-        async function withPdf(btn, busyText, action) {
-            const inv = invoices.find(x => x.id === viewedInvoiceId);
+        async function withPdf(btn, busyText, action, invArg) {
+            const inv = invArg || invoices.find(x => x.id === viewedInvoiceId);
             if (!inv) return;
-            const label = btn.innerHTML;
-            btn.disabled = true;
-            btn.textContent = busyText;
+            const label = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.textContent = busyText; }
+            else showToastText(busyText);
             try {
                 const file = await makeInvoicePdf(inv);
                 await action(file, inv);
@@ -3204,9 +3240,43 @@
                 console.warn(e);
                 showAlert(navigator.onLine ? 'PDF se nepodařilo vytvořit, zkus to znovu.' : 'Na první stažení PDF je potřeba internet. Pak už to půjde i bez něj.');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = label;
+                if (btn) { btn.disabled = false; btn.innerHTML = label; }
             }
+        }
+
+        // ---------- uložené faktury v telefonu ----------
+        function downloadedSet() {
+            try { return new Set(JSON.parse(localStorage.getItem('invDownloaded') || '[]')); } catch (e) { return new Set(); }
+        }
+
+        function markDownloaded(id) {
+            const set = downloadedSet();
+            set.add(id);
+            try { localStorage.setItem('invDownloaded', JSON.stringify([...set])); } catch (e) {}
+        }
+
+        function isDownloaded(id) {
+            return downloadedSet().has(id);
+        }
+
+        function saveFileToPhone(file) {
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 30000);
+        }
+
+        function downloadInvoice(inv, btn) {
+            return withPdf(btn, 'Připravuju PDF…', async (file) => {
+                saveFileToPhone(file);
+                markDownloaded(inv.id);
+                renderInvoices();
+                showToastText('Uloženo do složky Stažené soubory ✓');
+            }, inv);
         }
 
         function canShareFiles() {
@@ -3216,17 +3286,8 @@
         }
 
         document.getElementById('btnViewerDownload').addEventListener('click', function() {
-            withPdf(this, 'Připravuju PDF…', async (file) => {
-                const url = URL.createObjectURL(file);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = file.name;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 30000);
-                showToastText('Faktura stažená ✓');
-            });
+            const inv = invoices.find(x => x.id === viewedInvoiceId);
+            if (inv) downloadInvoice(inv, this);
         });
 
         document.getElementById('btnViewerShare').addEventListener('click', function() {
@@ -3485,8 +3546,10 @@
                 try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
                 closeInvoiceModal();
                 renderInvoices();
-                showAlert('Faktura ' + number + ' na ' + total.toLocaleString('cs-CZ') + ' Kč je uložená' +
-                    (allPaid ? ' rovnou mezi zaplacenými (úklidy už byly zaplacené).' : ' mezi fakturami.'));
+                showChoice('Faktura ' + number + ' na ' + total.toLocaleString('cs-CZ') + ' Kč je hotová' +
+                    (allPaid ? ' (rovnou mezi zaplacenými).' : '.') +
+                    '\n\nUlož si ji i do telefonu – faktury je potřeba schovávat aspoň 3 roky.',
+                    'Uložit do telefonu', 'Později', () => downloadInvoice(inv));
             } catch (e) {
                 console.warn(e);
                 showAlert(dbErrorText(e) + ' Faktura se nevytvořila, zkus to znovu.');
@@ -3543,6 +3606,12 @@
         document.getElementById('viewFaktury').addEventListener('click', function(e) {
             const v = e.target.closest('[data-inv-action="view"]');
             if (v) { openInvoiceViewer(v.dataset.invId); return; }
+            const dl = e.target.closest('[data-inv-action="download"]');
+            if (dl) {
+                const inv = invoices.find(x => x.id === dl.dataset.invId);
+                if (inv) downloadInvoice(inv, dl);
+                return;
+            }
             const pd = e.target.closest('[data-inv-action="paid"]');
             if (pd) { markInvoicePaid(pd.dataset.invId); return; }
             const b = e.target.closest('[data-inv-action="delete"]');

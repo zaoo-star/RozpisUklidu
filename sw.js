@@ -1,5 +1,5 @@
 // Moje úklidy – offline režim. Při změně souborů zvyš číslo verze.
-const CACHE = 'uklidy-v12';
+const CACHE = 'uklidy-v13';
 const FILES = [
   './',
   './index.html',
