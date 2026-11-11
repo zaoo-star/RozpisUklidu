@@ -585,6 +585,22 @@
 
         .viewer-bar .spacer { flex: 1; }
 
+        .viewer-actions {
+            display: flex;
+            gap: 10px;
+            max-width: 800px;
+            margin: 0 auto 12px;
+        }
+
+        .viewer-main {
+            flex: 1;
+            justify-content: center;
+            height: 54px;
+            font-size: 1.05rem;
+        }
+
+        .viewer-main:disabled { opacity: 0.6; }
+
         .viewer-paid {
             background: #e3f4e8;
             color: var(--green);
@@ -639,6 +655,14 @@
             .doc .hide-sm { display: table-cell; }
             .totals { flex-direction: row; justify-content: space-between; align-items: flex-end; }
         }
+
+        /* pevné rozložení A4 pro PDF (nezávisle na šířce telefonu) */
+        .doc.doc-a4 { max-width: none; width: 794px; border-radius: 0; padding: 40px 44px; font-size: 14px; }
+        .doc-a4 .parties { grid-template-columns: 1fr 1fr; gap: 24px; }
+        .doc-a4 .facts { grid-template-columns: repeat(3, 1fr); }
+        .doc-a4 .hide-sm { display: table-cell; }
+        .doc-a4 .totals { flex-direction: row; justify-content: space-between; align-items: flex-end; }
+        .doc-a4 .doc-title { font-size: 26px; }
 
         @media print {
             @page { size: A4; margin: 14mm; }
@@ -1570,11 +1594,14 @@
         <div class="viewer-bar no-print">
             <button class="btn-soft" id="btnViewerBack">← Zpět</button>
             <span class="spacer"></span>
-            <button class="btn-soft btn-solid" id="btnViewerPrint">Uložit PDF</button>
+        </div>
+        <div class="viewer-actions no-print">
+            <button class="btn-soft btn-solid viewer-main" id="btnViewerDownload"><svg class="ico"><use href="#i-download"/></svg>Stáhnout PDF</button>
+            <button class="btn-soft viewer-main" id="btnViewerShare" style="display:none"><svg class="ico"><use href="#i-upload"/></svg>Poslat</button>
         </div>
         <div class="viewer-paid no-print" id="viewerPaid"></div>
         <div class="doc" id="invoiceDoc"></div>
-        <p class="viewer-hint no-print">V okně, které se otevře, vyber „Uložit jako PDF“. PDF pak můžeš poslat e-mailem nebo WhatsAppem.</p>
+        <p class="viewer-hint no-print" id="viewerHint">„Stáhnout PDF“ uloží fakturu do telefonu. „Poslat“ ji rovnou pošle třeba přes WhatsApp nebo e-mail.</p>
     </div>
 
     <!-- Údaje na fakturu -->
@@ -3086,6 +3113,10 @@
             document.getElementById('invoiceDoc').innerHTML = invoiceDocHTML(inv);
             document.getElementById('viewerPaid').textContent = inv.status === 'paid'
                 ? 'Zaplaceno' + (inv.paidAt ? ' ' + new Date(inv.paidAt).toLocaleDateString('cs-CZ') : '') : '';
+            document.getElementById('btnViewerShare').style.display = canShareFiles() ? '' : 'none';
+            document.getElementById('viewerHint').textContent = canShareFiles()
+                ? '„Stáhnout PDF“ uloží fakturu do telefonu. „Poslat“ ji rovnou pošle třeba přes WhatsApp nebo e-mail.'
+                : '„Stáhnout PDF“ uloží fakturu do počítače nebo telefonu jako soubor.';
             const v = document.getElementById('invoiceViewer');
             v.classList.add('active');
             v.setAttribute('aria-hidden', 'false');
@@ -3100,13 +3131,109 @@
         }
 
         document.getElementById('btnViewerBack').addEventListener('click', closeInvoiceViewer);
-        document.getElementById('btnViewerPrint').addEventListener('click', function() {
+        // ---------- PDF faktury ----------
+        let pdfLibsPromise = null;
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const el = document.createElement('script');
+                el.src = src;
+                el.onload = resolve;
+                el.onerror = () => reject(new Error('Nenačetlo se ' + src));
+                document.head.appendChild(el);
+            });
+        }
+
+        function loadPdfLibs() {
+            if (!pdfLibsPromise) {
+                pdfLibsPromise = Promise.all([loadScript('lib/html2canvas.min.js'), loadScript('lib/jspdf.umd.min.js')])
+                    .catch(e => { pdfLibsPromise = null; throw e; });
+            }
+            return pdfLibsPromise;
+        }
+
+        function invoiceFileName(inv) {
+            return asciiOnly(docTitle(inv)).replace(/\s+/g, '-') + '-' + String(inv.number || '').replace(/[^0-9A-Za-z-]/g, '') + '.pdf';
+        }
+
+        async function makeInvoicePdf(inv) {
+            await loadPdfLibs();
+            if (document.fonts && document.fonts.ready) await document.fonts.ready;
+            const holder = document.createElement('div');
+            holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;background:#fff;';
+            holder.innerHTML = '<div class="doc doc-a4">' + invoiceDocHTML(inv) + '</div>';
+            document.body.appendChild(holder);
+            let canvas;
+            try {
+                canvas = await html2canvas(holder.firstChild, {scale: 2, backgroundColor: '#ffffff', logging: false});
+            } finally {
+                holder.remove();
+            }
+            const {jsPDF} = window.jspdf;
+            const pdf = new jsPDF({unit: 'mm', format: 'a4', orientation: 'portrait', compress: true});
+            const margin = 8, pageW = 210 - 2 * margin, pageH = 297 - 2 * margin;
+            const pxPerMm = canvas.width / pageW;
+            const slicePx = Math.floor(pageH * pxPerMm);
+            for (let y = 0, page = 0; y < canvas.height; y += slicePx, page++) {
+                const h = Math.min(slicePx, canvas.height - y);
+                const part = document.createElement('canvas');
+                part.width = canvas.width;
+                part.height = h;
+                const ctx = part.getContext('2d');
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, part.width, part.height);
+                ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+                if (page > 0) pdf.addPage();
+                pdf.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, pageW, h / pxPerMm);
+            }
+            pdf.setProperties({title: docTitle(inv) + ' ' + inv.number, creator: 'Moje úklidy'});
+            return new File([pdf.output('blob')], invoiceFileName(inv), {type: 'application/pdf'});
+        }
+
+        async function withPdf(btn, busyText, action) {
             const inv = invoices.find(x => x.id === viewedInvoiceId);
-            const oldTitle = document.title;
-            if (inv) document.title = docTitle(inv) + ' ' + inv.number; // název PDF souboru
-            document.body.classList.add('printing');
-            window.print();
-            setTimeout(() => { document.body.classList.remove('printing'); document.title = oldTitle; }, 500);
+            if (!inv) return;
+            const label = btn.innerHTML;
+            btn.disabled = true;
+            btn.textContent = busyText;
+            try {
+                const file = await makeInvoicePdf(inv);
+                await action(file, inv);
+            } catch (e) {
+                if (e && e.name === 'AbortError') return; // sdílení zrušeno
+                console.warn(e);
+                showAlert(navigator.onLine ? 'PDF se nepodařilo vytvořit, zkus to znovu.' : 'Na první stažení PDF je potřeba internet. Pak už to půjde i bez něj.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = label;
+            }
+        }
+
+        function canShareFiles() {
+            try {
+                return !!(navigator.canShare && navigator.canShare({files: [new File(['x'], 'a.pdf', {type: 'application/pdf'})]}));
+            } catch (e) { return false; }
+        }
+
+        document.getElementById('btnViewerDownload').addEventListener('click', function() {
+            withPdf(this, 'Připravuju PDF…', async (file) => {
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 30000);
+                showToastText('Faktura stažená ✓');
+            });
+        });
+
+        document.getElementById('btnViewerShare').addEventListener('click', function() {
+            withPdf(this, 'Připravuju…', async (file, inv) => {
+                await navigator.share({files: [file], title: docTitle(inv) + ' ' + inv.number,
+                    text: docTitle(inv) + ' ' + inv.number + ' – ' + Number(inv.total || 0).toLocaleString('cs-CZ') + ' Kč'});
+            });
         });
 
         // ---------- přepínání pohledů ----------
