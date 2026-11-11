@@ -2927,9 +2927,10 @@
 
         // stáhne společné i moje soukromé faktury
         async function fetchAllInvoices() {
+            // soukromé se nesmí podařit zablokovat společné (a naopak chyba společných se ohlásí)
             const [shared, mine] = await Promise.all([
                 dbRequest('GET', invPath()),
-                dbRequest('GET', privatePath())
+                dbRequest('GET', privatePath()).catch(e => { console.warn('Soukromé faktury:', e); return null; })
             ]);
             const list = v => v && typeof v === 'object' ? Object.values(v).filter(x => x && x.id) : [];
             return list(shared).map(x => { x.private = false; return x; })
