@@ -1340,7 +1340,7 @@
                 <p><strong>Klienti</strong> – stálí klienti s adresou, cenou a poznámkami. Zelené tlačítko ▶ rovnou vytvoří úklid s jejich údaji.</p>
                 <p><strong>Přehled podle adres</strong> – kolikrát jsi kde byla a kolik jsi tam vydělala.</p>
                 <p><strong>Přidat na plochu</strong> – v Nastavení. Appka pak má vlastní ikonu a funguje i bez internetu.</p>
-                <p><strong>Faktury</strong> – nahoře přepni na „Faktury“, dej „Nová faktura“ a zaškrtni hotové úklidy. Faktura se objeví mezi fakturami a vidí ji každý, kdo má appku. „Zaplaceno“ může dát jen ten, kdo fakturu vytvořil – faktura se pak přesune do Zaplacených a úklidy se samy označí jako zaplacené. „Zobrazit“ → „Uložit PDF“ fakturu stáhne.</p>
+                <p><strong>Faktury</strong> – nahoře přepni na „Faktury“, dej „Nová faktura“ a zaškrtni hotové úklidy. Faktury jsou za heslem – zadá se jednou na každém telefonu. Faktura se objeví mezi fakturami a vidí ji každý, kdo zná heslo. „Zaplaceno“ může dát jen ten, kdo fakturu vytvořil – faktura se pak přesune do Zaplacených a úklidy se samy označí jako zaplacené. „Zobrazit“ → „Uložit PDF“ fakturu stáhne.</p>
                 <p><strong>Výdělek po měsících</strong> – kolik jsi který měsíc vydělala a souhrn za celý rok (hodí se k daňovému přiznání).</p>
                 <p><strong>Záloha</strong> – data jsou jen v telefonu. „Uložit“ stáhne všechna data do souboru, „Načíst“ je ze souboru vrátí. Když jsi zálohu dlouho neudělala, appka ti to připomene.</p>
             </div>
@@ -1350,9 +1350,23 @@
     </div><!-- /viewUklidy -->
 
     <div id="viewFaktury" style="display:none">
+        <div class="inv-panel" id="invLockPanel" style="display:none">
+            <div class="inv-panel-title">Faktury jsou zamčené</div>
+            <div class="inv-panel-text">Zadej heslo k fakturám. Stačí jednou, pak si ho appka pamatuje.</div>
+            <div class="form-group" style="margin-bottom:10px">
+                <label for="invPassword">Heslo</label>
+                <input type="password" id="invPassword" autocomplete="current-password" autocapitalize="off" spellcheck="false">
+                <div class="form-hint" id="invPasswordHint"></div>
+            </div>
+            <div class="inv-panel-buttons">
+                <button class="btn-soft btn-solid" id="btnUnlock">Odemknout</button>
+            </div>
+        </div>
+
+        <div id="invUnlocked">
         <div class="inv-panel" id="invStartPanel" style="display:none">
             <div class="inv-panel-title">Chceš vystavovat faktury?</div>
-            <div class="inv-panel-text">Vyplň jednou své údaje a pak z hotových úklidů vytvoříš fakturu. Faktury tady vidí každý, kdo má appku.</div>
+            <div class="inv-panel-text">Vyplň jednou své údaje a pak z hotových úklidů vytvoříš fakturu. Faktury tady vidí každý, kdo zná heslo.</div>
             <div class="inv-panel-buttons">
                 <button class="btn-soft btn-solid" id="btnInvSetup">Vyplnit údaje</button>
             </div>
@@ -1360,7 +1374,7 @@
 
         <div class="inv-panel" id="invCodePanel" style="display:none">
             <div class="inv-panel-title" id="invIssuerTitle">Vystavuješ faktury</div>
-            <div class="inv-panel-text">Faktury, které vytvoříš, vidí každý s appkou. Jako zaplacené je můžeš označit jen ty.</div>
+            <div class="inv-panel-text">Faktury, které vytvoříš, vidí každý, kdo zná heslo. Jako zaplacené je můžeš označit jen ty.</div>
             <div class="inv-panel-buttons">
                 <button class="btn-soft" id="btnInvSettings">Údaje na fakturu</button>
             </div>
@@ -1382,6 +1396,7 @@
             <strong>Zatím žádné faktury</strong>
             Tlačítkem „Nová faktura“ vybereš hotové úklidy a vytvoříš z nich fakturu.
         </div>
+        </div><!-- /invUnlocked -->
     </div>
 
     <div class="add-buttons" id="barFaktury" style="display:none">
@@ -2727,8 +2742,46 @@
             return isIssuer();
         }
 
-        // Všechny faktury jsou na jednom společném místě – vidí je každý s appkou.
-        const SHARED_KEY = 'spolecne-faktury-moje-uklidy';
+        // Faktury jsou za heslem. Heslo v kódu není – jen jeho otisk (SHA-256) pro kontrolu.
+        // Místo v databázi se z hesla odvodí jiným otiskem, takže bez hesla ho nikdo nezná.
+        const PASS_CHECK = '24c70d6317d2aac8d7a88f3a357210e0c52ebe26021d031738425977d8b532bb';
+        const OLD_SHARED_KEY = 'spolecne-faktury-moje-uklidy'; // dřívější veřejné místo
+
+        async function sha256hex(text) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+            return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function invUnlocked() {
+            return !!invSettings.dataKey;
+        }
+
+        function invPath() {
+            return 'faktury/' + invSettings.dataKey;
+        }
+
+        async function unlockInvoices() {
+            const input = document.getElementById('invPassword');
+            const hint = document.getElementById('invPasswordHint');
+            const pw = input.value.trim().toLowerCase();
+            if (!pw) { hint.className = 'form-hint err'; hint.textContent = 'Napiš heslo.'; return; }
+            if (await sha256hex('moje-uklidy-check:' + pw) !== PASS_CHECK) {
+                hint.className = 'form-hint err';
+                hint.textContent = 'Špatné heslo.';
+                input.select();
+                return;
+            }
+            invSettings.dataKey = 'heslo-' + (await sha256hex('moje-uklidy-data:' + pw)).slice(0, 32);
+            saveInvoiceSettings();
+            input.value = '';
+            hint.textContent = '';
+            renderInvoices();
+            switchView('faktury');
+            showToastText('Faktury odemčené ✓');
+        }
+
+        document.getElementById('btnUnlock').addEventListener('click', unlockInvoices);
+        document.getElementById('invPassword').addEventListener('keydown', e => { if (e.key === 'Enter') unlockInvoices(); });
 
         // Kdo fakturu vytvořil: náhodné ID tohohle telefonu (je i v záloze)
         function myId() {
@@ -2765,27 +2818,37 @@
             return 'Nepodařilo se spojit s online úložištěm.';
         }
 
-        // Faktury vytvořené dřív pod soukromým kódem přesune na společné místo
-        async function migrateOldKey() {
-            const old = invSettings.key;
-            if (!old || old === SHARED_KEY) return;
-            const data = await dbRequest('GET', 'faktury/' + encodeURIComponent(old));
+        // Faktury z dřívějška (pod kódem nebo na veřejném místě) přesune za heslo
+        async function moveInvoices(fromKey, adopt) {
+            const data = await dbRequest('GET', 'faktury/' + encodeURIComponent(fromKey));
             const list = data && typeof data === 'object' ? Object.values(data).filter(x => x && x.id) : [];
             for (const inv of list) {
-                if (isIssuer() && !inv.creatorId) inv.creatorId = myId();
-                await dbRequest('PUT', 'faktury/' + SHARED_KEY + '/' + encodeURIComponent(inv.id), inv);
-                await dbRequest('DELETE', 'faktury/' + encodeURIComponent(old) + '/' + encodeURIComponent(inv.id));
+                if (adopt && isIssuer() && !inv.creatorId) inv.creatorId = myId();
+                await dbRequest('PUT', invPath() + '/' + encodeURIComponent(inv.id), inv);
+                await dbRequest('DELETE', 'faktury/' + encodeURIComponent(fromKey) + '/' + encodeURIComponent(inv.id));
             }
-            invSettings.key = '';
-            saveInvoiceSettings();
+        }
+
+        async function migrateOldKey() {
+            if (invSettings.key) {
+                await moveInvoices(invSettings.key, true);
+                invSettings.key = '';
+                saveInvoiceSettings();
+            }
+            if (!invSettings.movedPublic) {
+                await moveInvoices(OLD_SHARED_KEY, false);
+                invSettings.movedPublic = true;
+                saveInvoiceSettings();
+            }
         }
 
         // Stáhne faktury a propíše zaplacení do mých úklidů
         async function syncInvoices(silent) {
+            if (!invUnlocked()) { renderInvoices(); return; }
             const syncEl = document.getElementById('invSync');
             try {
                 await migrateOldKey();
-                const data = await dbRequest('GET', 'faktury/' + SHARED_KEY);
+                const data = await dbRequest('GET', invPath());
                 invoices = data && typeof data === 'object' ? Object.values(data).filter(x => x && x.id) : [];
                 try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
 
@@ -2848,6 +2911,14 @@
         }
 
         function renderInvoices() {
+            const locked = !invUnlocked();
+            document.getElementById('invLockPanel').style.display = locked ? 'block' : 'none';
+            document.getElementById('invUnlocked').style.display = locked ? 'none' : '';
+            if (locked) {
+                document.getElementById('tabInvBadge').textContent = '';
+                if (currentView === 'faktury') document.getElementById('barFaktury').style.display = 'none';
+                return;
+            }
             const issuer = isIssuer();
             document.getElementById('invStartPanel').style.display = issuer ? 'none' : 'block';
             document.getElementById('invCodePanel').style.display = issuer ? 'block' : 'none';
@@ -3009,7 +3080,7 @@
             document.getElementById('viewUklidy').style.display = view === 'uklidy' ? '' : 'none';
             document.getElementById('viewFaktury').style.display = view === 'faktury' ? '' : 'none';
             document.getElementById('barUklidy').style.display = view === 'uklidy' ? '' : 'none';
-            document.getElementById('barFaktury').style.display = view === 'faktury' && invoiceReady() ? '' : 'none';
+            document.getElementById('barFaktury').style.display = view === 'faktury' && invUnlocked() && invoiceReady() ? '' : 'none';
             document.getElementById('tabUklidy').classList.toggle('active', view === 'uklidy');
             document.getElementById('tabFaktury').classList.toggle('active', view === 'faktury');
             document.getElementById('tabUklidy').setAttribute('aria-selected', view === 'uklidy');
@@ -3017,7 +3088,8 @@
             window.scrollTo(0, 0);
             if (view === 'faktury') {
                 renderInvoices();
-                syncInvoices(true);
+                if (invUnlocked()) syncInvoices(true);
+                else setTimeout(() => document.getElementById('invPassword').focus(), 50);
             }
         }
 
@@ -3198,7 +3270,7 @@
             btn.textContent = 'Ukládám…';
             try {
                 // číslo faktury: rok + pořadí (2026-001), podle faktur na internetu
-                const remote = await dbRequest('GET', 'faktury/' + SHARED_KEY);
+                const remote = await dbRequest('GET', invPath());
                 const existing = remote && typeof remote === 'object' ? Object.values(remote) : [];
                 const year = localISODate(0).slice(0, 4);
                 const maxSeq = existing.filter(isMine)
@@ -3229,7 +3301,7 @@
                     total,
                     status: 'open'
                 };
-                await dbRequest('PUT', 'faktury/' + SHARED_KEY + '/' + id, inv);
+                await dbRequest('PUT', invPath() + '/' + id, inv);
                 chosen.forEach(c => { c.invoiceId = id; c.invoiceNumber = number; });
                 save();
                 render();
@@ -3279,7 +3351,7 @@
             showConfirm('Faktura ' + inv.number + ' na ' + Number(inv.total || 0).toLocaleString('cs-CZ') + ' Kč je zaplacená?', async function() {
                 const patch = {status: 'paid', paidAt: new Date().toISOString()};
                 try {
-                    await dbRequest('PATCH', 'faktury/' + SHARED_KEY + '/' + encodeURIComponent(id), patch);
+                    await dbRequest('PATCH', invPath() + '/' + encodeURIComponent(id), patch);
                     Object.assign(inv, patch);
                     try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
                     propagatePaid();
@@ -3303,7 +3375,7 @@
             if (!inv || !isMine(inv)) return;
             showConfirm('Smazat fakturu ' + inv.number + '? Úklidy z ní se zase objeví jako nezaplacené bez faktury.', async function() {
                 try {
-                    await dbRequest('DELETE', 'faktury/' + SHARED_KEY + '/' + id);
+                    await dbRequest('DELETE', invPath() + '/' + id);
                     cleanings.forEach(c => { if (c.invoiceId === id) { delete c.invoiceId; delete c.invoiceNumber; } });
                     save();
                     render();
@@ -3319,11 +3391,11 @@
 
         // aktualizace po návratu do appky
         document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'visible') syncInvoices(true);
+            if (document.visibilityState === 'visible' && invUnlocked()) syncInvoices(true);
         });
 
         renderInvoices();
-        setTimeout(() => syncInvoices(true), 800);
+        if (invUnlocked()) setTimeout(() => syncInvoices(true), 800);
 
         // ---------- Appka na ploše (PWA) ----------
         if ('serviceWorker' in navigator) {
