@@ -664,6 +664,9 @@
         .pick-summary strong { font-size: 1.4rem; }
         .pick-all { background: none; border: none; color: var(--accent); font-family: inherit; font-weight: 800; font-size: 0.95rem; cursor: pointer; padding: 6px 0; }
 
+        .pick-group { font-weight: 800; margin: 8px 0 6px; }
+        .pick-group-hint { color: var(--muted); font-size: 0.88rem; margin: -4px 0 8px; }
+
         .pick-row {
             display: flex;
             align-items: center;
@@ -3214,11 +3217,27 @@
         });
 
         // ---------- nová faktura ----------
+        // hotové úklidy, které ještě nejsou na faktuře – nezaplacené i už zaplacené
         function invoiceCandidates() {
             const today = localISODate(0);
-            return cleanings
-                .filter(c => !c.paid && !c.invoiceId && c.date && c.date <= today)
+            const free = cleanings
+                .filter(c => !c.invoiceId && c.date && c.date <= today)
                 .sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
+            return {unpaid: free.filter(c => !c.paid), paid: free.filter(c => c.paid)};
+        }
+
+        function pickRowHTML(c, checked) {
+            const ok = !!c.price;
+            return `
+                <label class="pick-row ${ok ? '' : 'disabled'}">
+                    <input type="checkbox" value="${esc(c.id)}" ${!ok ? 'disabled' : (checked ? 'checked' : '')}>
+                    <span class="grow">
+                        <span class="pick-addr">${esc(c.address)}</span><br>
+                        <span class="pick-date">${formatDate(c.date)}</span>
+                        ${ok ? '' : '<br><span class="pick-warn">Doplň cenu, pak půjde přidat</span>'}
+                    </span>
+                    <span class="pick-price">${ok ? Number(c.price).toLocaleString('cs-CZ') + ' Kč' : '– Kč'}</span>
+                </label>`;
         }
 
         function updatePickTotal() {
@@ -3232,25 +3251,16 @@
 
         function openInvoiceModal() {
             if (!invoiceReady()) { openInvSettings(); return; }
-            const list = invoiceCandidates();
+            const {unpaid, paid} = invoiceCandidates();
             const box = document.getElementById('pickList');
-            if (!list.length) {
-                showAlert('Nemáš žádné hotové nezaplacené úklidy, které by ještě nebyly na faktuře.');
+            if (!unpaid.length && !paid.length) {
+                showAlert('Nemáš žádné hotové úklidy, které by ještě nebyly na faktuře.');
                 return;
             }
-            box.innerHTML = list.map(c => {
-                const ok = !!c.price;
-                return `
-                    <label class="pick-row ${ok ? '' : 'disabled'}">
-                        <input type="checkbox" value="${esc(c.id)}" ${ok ? 'checked' : 'disabled'}>
-                        <span class="grow">
-                            <span class="pick-addr">${esc(c.address)}</span><br>
-                            <span class="pick-date">${formatDate(c.date)}</span>
-                            ${ok ? '' : '<br><span class="pick-warn">Doplň cenu, pak půjde přidat</span>'}
-                        </span>
-                        <span class="pick-price">${ok ? Number(c.price).toLocaleString('cs-CZ') + ' Kč' : '– Kč'}</span>
-                    </label>`;
-            }).join('');
+            box.innerHTML =
+                (unpaid.length ? '<div class="pick-group">Nezaplacené</div>' + unpaid.map(c => pickRowHTML(c, true)).join('') : '') +
+                (paid.length ? '<div class="pick-group">Už zaplacené</div><div class="pick-group-hint">Zaškrtni, pokud na ně potřebuješ fakturu.</div>' +
+                    paid.map(c => pickRowHTML(c, !unpaid.length && paid.length === 1)).join('') : '');
             updatePickTotal();
             const m = document.getElementById('invoiceModal');
             m.querySelector('.modal-content').scrollTop = 0;
@@ -3280,6 +3290,7 @@
                 const number = year + '-' + String(maxSeq + 1).padStart(3, '0');
                 const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
                 const total = chosen.reduce((s, c) => s + (c.price || 0), 0);
+                const allPaid = chosen.every(c => c.paid);
                 const inv = {
                     id,
                     number,
@@ -3299,7 +3310,8 @@
                     cleaningIds: chosen.map(c => c.id),
                     creatorId: myId(),
                     total,
-                    status: 'open'
+                    status: allPaid ? 'paid' : 'open',
+                    paidAt: allPaid ? new Date().toISOString() : null
                 };
                 await dbRequest('PUT', invPath() + '/' + id, inv);
                 chosen.forEach(c => { c.invoiceId = id; c.invoiceNumber = number; });
@@ -3309,7 +3321,8 @@
                 try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
                 closeInvoiceModal();
                 renderInvoices();
-                showAlert('Faktura ' + number + ' na ' + total.toLocaleString('cs-CZ') + ' Kč je uložená mezi fakturami.');
+                showAlert('Faktura ' + number + ' na ' + total.toLocaleString('cs-CZ') + ' Kč je uložená' +
+                    (allPaid ? ' rovnou mezi zaplacenými (úklidy už byly zaplacené).' : ' mezi fakturami.'));
             } catch (e) {
                 console.warn(e);
                 showAlert(dbErrorText(e) + ' Faktura se nevytvořila, zkus to znovu.');
