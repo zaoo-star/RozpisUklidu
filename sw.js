@@ -1,9 +1,8 @@
 // Moje úklidy – offline režim. Při změně souborů zvyš číslo verze.
-const CACHE = 'uklidy-v6';
+const CACHE = 'uklidy-v7';
 const FILES = [
   './',
   './index.html',
-  './faktury.html',
   './lib/qrcode.js',
   './manifest.json',
   './avatar.jpg',

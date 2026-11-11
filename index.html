@@ -556,6 +556,110 @@
             margin-top: 6px;
         }
 
+        .inv-code {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            margin: 4px 0 6px;
+            overflow-wrap: anywhere;
+            user-select: all;
+        }
+
+        /* ---------- Zobrazení faktury ---------- */
+        .invoice-viewer {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 220;
+            background: var(--bg);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 12px 30px;
+        }
+
+        .invoice-viewer.active { display: block; }
+
+        .viewer-bar {
+            position: sticky;
+            top: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 0;
+            background: var(--bg);
+            z-index: 1;
+        }
+
+        .viewer-bar .spacer { flex: 1; }
+
+        .viewer-paid {
+            background: #e3f4e8;
+            color: var(--green);
+            font-weight: 800;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+        }
+
+        .viewer-paid:empty { display: none; }
+        .viewer-hint { color: var(--muted); font-size: 0.9rem; margin-top: 10px; }
+
+        .doc {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 6px;
+            padding: 22px 16px;
+            color: #111;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .doc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 16px; border-bottom: 2px solid #111; }
+        .doc-title { font-size: 21px; font-weight: 800; letter-spacing: 0.02em; }
+        .doc-number { font-size: 15px; font-weight: 700; text-align: right; }
+        .doc-number span { display: block; font-size: 11px; font-weight: 600; color: #555; }
+        .parties { display: grid; grid-template-columns: 1fr; gap: 14px; padding: 18px 0; }
+        .party-label { font-size: 11px; font-weight: 700; color: #555; margin-bottom: 3px; }
+        .party-name { font-weight: 800; font-size: 14px; }
+        .party-line { white-space: pre-line; }
+        .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; padding: 12px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; }
+        .fact-label { font-size: 11px; color: #555; }
+        .fact-value { font-weight: 700; overflow-wrap: anywhere; }
+        .doc table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        .doc th { text-align: left; font-size: 11px; color: #555; font-weight: 700; padding: 6px 5px; border-bottom: 1px solid #111; }
+        .doc td { padding: 7px 5px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        .doc th.num, .doc td.num { text-align: right; white-space: nowrap; }
+        .doc .hide-sm { display: none; }
+        .totals { display: flex; flex-direction: column-reverse; gap: 16px; margin-top: 20px; }
+        .qr { text-align: center; font-size: 11px; color: #555; }
+        .qr svg { width: 132px; height: 132px; display: block; margin: 0 auto 4px; }
+        .grand { text-align: right; }
+        .grand-label { font-size: 12px; color: #555; }
+        .grand-value { font-size: 24px; font-weight: 800; }
+        .doc-foot { margin-top: 22px; font-size: 11px; color: #555; }
+
+        @media (min-width: 600px) {
+            .doc { padding: 36px 34px; font-size: 14px; }
+            .parties { grid-template-columns: 1fr 1fr; gap: 24px; }
+            .facts { grid-template-columns: repeat(3, 1fr); }
+            .doc .hide-sm { display: table-cell; }
+            .totals { flex-direction: row; justify-content: space-between; align-items: flex-end; }
+        }
+
+        @media print {
+            @page { size: A4; margin: 14mm; }
+            body.printing { background: #fff; padding: 0; max-width: none; }
+            body.printing > *:not(#invoiceViewer) { display: none !important; }
+            body.printing #invoiceViewer { display: block !important; position: static; padding: 0; background: #fff; overflow: visible; }
+            body.printing .no-print { display: none !important; }
+            .doc { padding: 0; max-width: none; font-size: 12.5px; }
+            .parties { grid-template-columns: 1fr 1fr !important; gap: 24px; }
+            .facts { grid-template-columns: repeat(3, 1fr) !important; }
+            .doc .hide-sm { display: table-cell !important; }
+            .totals { flex-direction: row !important; justify-content: space-between; align-items: flex-end; }
+        }
+
         /* výběr úklidů do faktury */
         .pick-summary {
             display: flex;
@@ -1243,7 +1347,7 @@
                 <p><strong>Klienti</strong> – stálí klienti s adresou, cenou a poznámkami. Zelené tlačítko ▶ rovnou vytvoří úklid s jejich údaji.</p>
                 <p><strong>Přehled podle adres</strong> – kolikrát jsi kde byla a kolik jsi tam vydělala.</p>
                 <p><strong>Přidat na plochu</strong> – v Nastavení. Appka pak má vlastní ikonu a funguje i bez internetu.</p>
-                <p><strong>Faktury</strong> – nahoře přepni na „Faktury“, dej „Nová faktura“ a zaškrtni hotové úklidy. Faktura se uloží online a šéfová ji uvidí na svém odkazu, stáhne si ji a označí jako zaplacenou. Úklidy se pak samy označí jako zaplacené.</p>
+                <p><strong>Faktury</strong> – nahoře přepni na „Faktury“, dej „Nová faktura“ a zaškrtni hotové úklidy. Šéfová si v appce zadá tvůj kód (Faktury → „Mám kód“) a vidí stejné faktury. Kdo dá u faktury „Zaplaceno“, té se faktura přesune do Zaplacených u obou a úklidy se samy označí jako zaplacené. „Zobrazit“ → „Uložit PDF“ fakturu stáhne.</p>
                 <p><strong>Výdělek po měsících</strong> – kolik jsi který měsíc vydělala a souhrn za celý rok (hodí se k daňovému přiznání).</p>
                 <p><strong>Záloha</strong> – data jsou jen v telefonu. „Uložit“ stáhne všechna data do souboru, „Načíst“ je ze souboru vrátí. Když jsi zálohu dlouho neudělala, appka ti to připomene.</p>
             </div>
@@ -1253,20 +1357,30 @@
     </div><!-- /viewUklidy -->
 
     <div id="viewFaktury" style="display:none">
-        <div class="inv-panel" id="invSetupPanel" style="display:none">
-            <div class="inv-panel-title">Nejdřív vyplň údaje na fakturu</div>
-            <div class="inv-panel-text">Tvoje jméno a číslo účtu, a komu fakturu posíláš. Stačí jednou.</div>
+        <div class="inv-panel" id="invStartPanel" style="display:none">
+            <div class="inv-panel-title">Faktury za úklidy</div>
+            <div class="inv-panel-text">Faktury vidíte obě ve stejné appce: ta, kdo je vystavuje, i ta, kdo je proplácí.</div>
             <div class="inv-panel-buttons">
-                <button class="btn-soft btn-solid" id="btnInvSetup">Vyplnit údaje</button>
+                <button class="btn-soft btn-solid" id="btnInvSetup">Vystavuju faktury</button>
+                <button class="btn-soft" id="btnJoinOpen">Mám kód</button>
             </div>
         </div>
 
-        <div class="inv-panel" id="invLinkPanel" style="display:none">
-            <div class="inv-panel-title">Odkaz pro šéfovou</div>
-            <div class="inv-panel-text">Na tomhle odkazu uvidí všechny tvoje faktury, stáhne si je a označí jako zaplacené. Pošli jí ho jen jednou.</div>
+        <div class="inv-panel" id="invCodePanel" style="display:none">
+            <div class="inv-panel-title">Kód pro šéfovou</div>
+            <div class="inv-code" id="invCodeText"></div>
+            <div class="inv-panel-text">Šéfová si otevře appku Moje úklidy, dá Faktury → „Mám kód“ a zadá ho. Pak uvidí stejné faktury jako ty.</div>
             <div class="inv-panel-buttons">
-                <button class="btn-soft btn-solid" id="btnShareLink">Poslat odkaz</button>
+                <button class="btn-soft btn-solid" id="btnShareCode">Poslat kód</button>
                 <button class="btn-soft" id="btnInvSettings">Údaje na fakturu</button>
+            </div>
+        </div>
+
+        <div class="inv-panel" id="invViewerPanel" style="display:none">
+            <div class="inv-panel-title" id="invViewerTitle">Faktury</div>
+            <div class="inv-panel-text">Vidíš faktury připojené kódem <strong id="invViewerCode"></strong>. Když fakturu proplatíš, dej u ní „Zaplaceno“.</div>
+            <div class="inv-panel-buttons">
+                <button class="btn-soft" id="btnLeave">Odpojit</button>
             </div>
         </div>
 
@@ -1420,6 +1534,34 @@
         </div>
     </div>
 
+    <!-- Připojení kódem -->
+    <div class="modal" id="joinModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Připojit se kódem</span>
+                <button class="close-btn" id="btnCloseJoin" aria-label="Zavřít"><svg class="ico"><use href="#i-x"/></svg></button>
+            </div>
+            <div class="form-group">
+                <label for="joinCode">Kód od kolegyně</label>
+                <input type="text" id="joinCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="např. ABCD-EFGH-JKMN-PQRS">
+                <div class="form-hint" id="joinHint">Kód najde v appce pod Faktury → „Kód pro šéfovou“.</div>
+            </div>
+            <button class="submit-btn" id="btnJoin">Připojit</button>
+        </div>
+    </div>
+
+    <!-- Zobrazení faktury -->
+    <div class="invoice-viewer" id="invoiceViewer" aria-hidden="true">
+        <div class="viewer-bar no-print">
+            <button class="btn-soft" id="btnViewerBack">← Zpět</button>
+            <span class="spacer"></span>
+            <button class="btn-soft btn-solid" id="btnViewerPrint">Uložit PDF</button>
+        </div>
+        <div class="viewer-paid no-print" id="viewerPaid"></div>
+        <div class="doc" id="invoiceDoc"></div>
+        <p class="viewer-hint no-print">V okně, které se otevře, vyber „Uložit jako PDF“. PDF pak můžeš poslat e-mailem nebo WhatsAppem.</p>
+    </div>
+
     <!-- Údaje na fakturu -->
     <div class="modal" id="invSettingsModal">
         <div class="modal-content">
@@ -1483,6 +1625,7 @@
         </div>
     </div>
 
+    <script src="lib/qrcode.js"></script>
     <script>
         // ========== LOKÁLNÍ ÚLOŽIŠTĚ (IndexedDB + localStorage) ==========
         
@@ -2581,14 +2724,12 @@
 
 
         // =====================================================================
-        // FAKTURY – ukládají se online do Firebase Realtime Database (REST API)
-        // Cesta: /faktury/{tajnyKlic}/{idFaktury}. Klíč zná jen ona a šéfová.
+        // FAKTURY – sdílené mezi tou, kdo vystavuje, a šéfovou (Firebase RTDB, REST API)
+        // Cesta: /faktury/{klic}/{idFaktury}. Klíč = kód, který si předají; jiný přístup není.
         // =====================================================================
         const DB_URL = 'https://evidence-uklidu-default-rtdb.europe-west1.firebasedatabase.app';
-        const BOSS_PAGE = 'faktury.html';
 
         let invoices = [];          // poslední známý stav z internetu
-        let invoicesSyncedAt = 0;
         let currentView = 'uklidy';
 
         function loadInvoiceSettings() {
@@ -2610,20 +2751,46 @@
             if (Array.isArray(cached)) invoices = cached;
         } catch (e) {}
 
-        function invoiceReady() {
-            return !!(invSettings.key && invSettings.supplier && invSettings.supplier.name &&
+        // vystavuje faktury (má vyplněné údaje) – jinak jen prohlíží (šéfová)
+        function isIssuer() {
+            return !!(invSettings.supplier && invSettings.supplier.name &&
                       invSettings.supplier.account && invSettings.customer && invSettings.customer.name);
         }
 
-        function newSecretKey() {
-            const bytes = new Uint8Array(18);
-            crypto.getRandomValues(bytes);
-            return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        function invoiceReady() {
+            return !!(invSettings.key && isIssuer());
         }
 
-        function bossLink(invoiceId) {
-            const base = new URL(BOSS_PAGE, location.href).href;
-            return base + '#k=' + encodeURIComponent(invSettings.key) + (invoiceId ? '&f=' + encodeURIComponent(invoiceId) : '');
+        // Kód: 16 znaků bez zaměnitelných (0/O, 1/I/L) → asi 79 bitů náhody
+        const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 31 znaků
+        const KEY_PREFIX = 'uklid-';
+
+        function newSecretKey() {
+            let code = '';
+            while (code.length < 16) {
+                const bytes = new Uint8Array(32);
+                crypto.getRandomValues(bytes);
+                for (const b of bytes) {
+                    if (b < 248 && code.length < 16) code += CODE_CHARS[b % 31]; // bez zkreslení
+                }
+            }
+            return KEY_PREFIX + code;
+        }
+
+        // klíč -> kód k zobrazení (ABCD-EFGH-JKMN-PQRS)
+        function keyToCode(key) {
+            if (!key) return '';
+            if (key.startsWith(KEY_PREFIX)) return key.slice(KEY_PREFIX.length).match(/.{1,4}/g).join('-');
+            return key; // starší dlouhý klíč
+        }
+
+        // co uživatelka napíše -> klíč
+        function codeToKey(text) {
+            const t = String(text || '').trim();
+            const alt = t.toUpperCase().replace(/[\s-]/g, '');
+            if (/^[A-Z0-9]{16}$/.test(alt) && [...alt].every(ch => CODE_CHARS.includes(ch))) return KEY_PREFIX + alt;
+            if (t.length >= 20 && /^[A-Za-z0-9_-]+$/.test(t)) return t; // starší dlouhý klíč
+            return null;
         }
 
         async function dbRequest(method, path, body) {
@@ -2653,7 +2820,6 @@
             try {
                 const data = await dbRequest('GET', 'faktury/' + encodeURIComponent(invSettings.key));
                 invoices = data && typeof data === 'object' ? Object.values(data).filter(x => x && x.id) : [];
-                invoicesSyncedAt = Date.now();
                 try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
 
                 let changed = false;
@@ -2692,10 +2858,11 @@
         function invoiceCardHTML(inv) {
             const paid = inv.status === 'paid';
             const n = (inv.items || []).length;
-            const title = (inv.supplier && inv.supplier.ico ? 'Faktura ' : 'Vyúčtování ') + esc(inv.number);
+            const title = docTitle(inv) + ' ' + esc(inv.number);
             const status = paid
                 ? 'Zaplaceno' + (inv.paidAt ? ' ' + new Date(inv.paidAt).toLocaleDateString('cs-CZ') : '')
                 : 'Splatnost ' + formatDate(inv.dueDate);
+            const id = esc(inv.id);
             return `
                 <div class="invoice-card ${paid ? 'paid' : ''}">
                     <div class="invoice-top">
@@ -2705,16 +2872,23 @@
                     <div class="invoice-sub">${esc(formatPeriod(inv.items || []))} · ${pocetUklidu(n)}</div>
                     <div class="invoice-status">${status}</div>
                     <div class="invoice-buttons">
-                        ${!paid ? '<button class="btn-icon btn-delete" data-inv-action="delete" data-inv-id="' + esc(inv.id) + '" aria-label="Smazat fakturu">' + icon('trash') + '</button>' : ''}
-                        <a class="btn-soft" href="${esc(bossLink(inv.id))}" target="_blank" rel="noopener">Zobrazit</a>
+                        ${!paid && isIssuer() ? '<button class="btn-icon btn-delete" data-inv-action="delete" data-inv-id="' + id + '" aria-label="Smazat fakturu">' + icon('trash') + '</button>' : ''}
+                        <button class="btn-soft" data-inv-action="view" data-inv-id="${id}">Zobrazit</button>
+                        ${!paid ? '<button class="btn-icon btn-paid" data-inv-action="paid" data-inv-id="' + id + '">' + icon('check') + 'Zaplaceno</button>' : ''}
                     </div>
                 </div>`;
         }
 
         function renderInvoices() {
-            const ready = invoiceReady();
-            document.getElementById('invSetupPanel').style.display = ready ? 'none' : 'block';
-            document.getElementById('invLinkPanel').style.display = ready ? 'block' : 'none';
+            const hasKey = !!invSettings.key;
+            const issuer = isIssuer() && hasKey;
+            document.getElementById('invStartPanel').style.display = !hasKey ? 'block' : 'none';
+            document.getElementById('invCodePanel').style.display = issuer ? 'block' : 'none';
+            document.getElementById('invViewerPanel').style.display = hasKey && !issuer ? 'block' : 'none';
+            document.getElementById('invCodeText').textContent = keyToCode(invSettings.key);
+            document.getElementById('invViewerCode').textContent = keyToCode(invSettings.key);
+            const from = invoices.find(i => i.supplier && i.supplier.name);
+            document.getElementById('invViewerTitle').textContent = from ? 'Faktury od: ' + from.supplier.name : 'Faktury';
 
             const sorted = invoices.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
             const open = sorted.filter(i => i.status !== 'paid');
@@ -2722,14 +2896,149 @@
 
             document.getElementById('invOpenSection').style.display = open.length ? 'block' : 'none';
             document.getElementById('invPaidSection').style.display = paid.length ? 'block' : 'none';
-            document.getElementById('invEmpty').style.display = (!open.length && !paid.length && ready) ? 'block' : 'none';
+            const emptyEl = document.getElementById('invEmpty');
+            emptyEl.style.display = (!open.length && !paid.length && hasKey) ? 'block' : 'none';
+            emptyEl.innerHTML = issuer
+                ? '<strong>Zatím žádné faktury</strong>Tlačítkem „Nová faktura“ vybereš hotové úklidy a vytvoříš z nich fakturu.'
+                : '<strong>Zatím žádné faktury</strong>Jakmile kolegyně nějakou vystaví, objeví se tady.';
             document.getElementById('invOpenCount').textContent = open.length;
             document.getElementById('invPaidCount').textContent = paid.length;
             document.getElementById('invOpenList').innerHTML = open.map(invoiceCardHTML).join('');
             document.getElementById('invPaidList').innerHTML = paid.map(invoiceCardHTML).join('');
             document.getElementById('tabInvBadge').textContent = open.length || '';
-            document.getElementById('btnNewInvoice').disabled = !ready;
+            if (currentView === 'faktury') {
+                document.getElementById('barFaktury').style.display = issuer ? '' : 'none';
+            }
         }
+
+        // ---------- vzhled faktury (doklad) ----------
+        function docTitle(inv) {
+            return inv.supplier && inv.supplier.ico ? 'Faktura' : 'Vyúčtování';
+        }
+
+        function mod97(numStr) {
+            let r = 0;
+            for (const ch of numStr) r = (r * 10 + (+ch)) % 97;
+            return r;
+        }
+
+        // české číslo účtu -> IBAN (CZ)
+        function toIBAN(account) {
+            const s = String(account || '').replace(/\s+/g, '').toUpperCase();
+            if (/^CZ\d{22}$/.test(s)) return s;
+            const m = /^(?:(\d{1,6})-)?(\d{2,10})\/(\d{4})$/.exec(s);
+            if (!m) return null;
+            const bban = m[3] + (m[1] || '').padStart(6, '0') + m[2].padStart(10, '0');
+            const check = 98 - mod97(bban + '123500');
+            return 'CZ' + String(check).padStart(2, '0') + bban;
+        }
+
+        function asciiOnly(s) {
+            return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E]/g, '').replace(/\*/g, '');
+        }
+
+        function qrPaymentSvg(inv, vs) {
+            const iban = toIBAN(inv.supplier && inv.supplier.account);
+            if (!iban || typeof qrcode !== 'function') return '';
+            const spd = 'SPD*1.0*ACC:' + iban + '*AM:' + Number(inv.total || 0).toFixed(2) + '*CC:CZK' +
+                (inv.dueDate ? '*DT:' + inv.dueDate.replace(/-/g, '') : '') +
+                '*X-VS:' + vs + '*MSG:' + asciiOnly(docTitle(inv) + ' ' + inv.number).slice(0, 60);
+            const q = qrcode(0, 'M');
+            q.addData(spd);
+            q.make();
+            return q.createSvgTag({cellSize: 4, margin: 2, scalable: true});
+        }
+
+        function invoiceDocHTML(inv) {
+            const d = x => x ? parseLocalDate(x).toLocaleDateString('cs-CZ') : '–';
+            const kc2 = v => Number(v || 0).toLocaleString('cs-CZ', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' Kč';
+            const vs = String(inv.number || '').replace(/\D/g, '');
+            const s = inv.supplier || {}, c = inv.customer || {};
+            const iban = toIBAN(s.account);
+            const qr = qrPaymentSvg(inv, vs);
+            return `
+                <div class="doc-head">
+                    <div class="doc-title">${docTitle(inv).toUpperCase()}</div>
+                    <div class="doc-number"><span>číslo</span>${esc(inv.number)}</div>
+                </div>
+                <div class="parties">
+                    <div>
+                        <div class="party-label">Dodavatel</div>
+                        <div class="party-name">${esc(s.name)}</div>
+                        ${s.address ? '<div class="party-line">' + esc(s.address) + '</div>' : ''}
+                        ${s.ico ? '<div>IČO: ' + esc(s.ico) + '</div>' : ''}
+                        ${inv.vatNote ? '<div>Nejsem plátce DPH.</div>' : ''}
+                        ${inv.tradeNote ? '<div>Fyzická osoba zapsaná v živnostenském rejstříku.</div>' : ''}
+                    </div>
+                    <div>
+                        <div class="party-label">Odběratel</div>
+                        <div class="party-name">${esc(c.name)}</div>
+                        ${c.address ? '<div class="party-line">' + esc(c.address) + '</div>' : ''}
+                        ${c.ico ? '<div>IČO: ' + esc(c.ico) + '</div>' : ''}
+                        ${c.dic ? '<div>DIČ: ' + esc(c.dic) + '</div>' : ''}
+                    </div>
+                </div>
+                <div class="facts">
+                    <div><div class="fact-label">Datum vystavení</div><div class="fact-value">${d(inv.issueDate)}</div></div>
+                    <div><div class="fact-label">Datum splatnosti</div><div class="fact-value">${d(inv.dueDate)}</div></div>
+                    <div><div class="fact-label">Období</div><div class="fact-value">${esc(formatPeriod(inv.items || []))}</div></div>
+                    <div><div class="fact-label">Způsob platby</div><div class="fact-value">Převodem</div></div>
+                    <div><div class="fact-label">Číslo účtu</div><div class="fact-value">${esc(s.account)}</div></div>
+                    <div><div class="fact-label">Variabilní symbol</div><div class="fact-value">${esc(vs)}</div></div>
+                </div>
+                <table>
+                    <thead><tr><th>Datum</th><th>Popis</th><th class="num hide-sm">Doba</th><th class="num">Částka</th></tr></thead>
+                    <tbody>
+                        ${(inv.items || []).map(i => `
+                            <tr>
+                                <td>${d(i.date)}</td>
+                                <td>Úklid – ${esc(i.address)}</td>
+                                <td class="num hide-sm">${i.duration ? formatDuration(i.duration) : ''}</td>
+                                <td class="num">${kc2(i.price)}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>
+                <div class="totals">
+                    ${qr ? '<div class="qr">' + qr + 'QR Platba</div>' : ''}
+                    <div class="grand">
+                        <div class="grand-label">Celkem k úhradě</div>
+                        <div class="grand-value">${kc2(inv.total)}</div>
+                    </div>
+                </div>
+                <div class="doc-foot">${iban ? 'IBAN: ' + esc(iban) : ''}</div>`;
+        }
+
+        let viewedInvoiceId = null;
+
+        function openInvoiceViewer(id) {
+            const inv = invoices.find(x => x.id === id);
+            if (!inv) return;
+            viewedInvoiceId = id;
+            document.getElementById('invoiceDoc').innerHTML = invoiceDocHTML(inv);
+            document.getElementById('viewerPaid').textContent = inv.status === 'paid'
+                ? 'Zaplaceno' + (inv.paidAt ? ' ' + new Date(inv.paidAt).toLocaleDateString('cs-CZ') : '') : '';
+            const v = document.getElementById('invoiceViewer');
+            v.classList.add('active');
+            v.setAttribute('aria-hidden', 'false');
+            v.scrollTop = 0;
+        }
+
+        function closeInvoiceViewer() {
+            const v = document.getElementById('invoiceViewer');
+            v.classList.remove('active');
+            v.setAttribute('aria-hidden', 'true');
+            viewedInvoiceId = null;
+        }
+
+        document.getElementById('btnViewerBack').addEventListener('click', closeInvoiceViewer);
+        document.getElementById('btnViewerPrint').addEventListener('click', function() {
+            const inv = invoices.find(x => x.id === viewedInvoiceId);
+            const oldTitle = document.title;
+            if (inv) document.title = docTitle(inv) + ' ' + inv.number; // název PDF souboru
+            document.body.classList.add('printing');
+            window.print();
+            setTimeout(() => { document.body.classList.remove('printing'); document.title = oldTitle; }, 500);
+        });
 
         // ---------- přepínání pohledů ----------
         function switchView(view) {
@@ -2737,7 +3046,7 @@
             document.getElementById('viewUklidy').style.display = view === 'uklidy' ? '' : 'none';
             document.getElementById('viewFaktury').style.display = view === 'faktury' ? '' : 'none';
             document.getElementById('barUklidy').style.display = view === 'uklidy' ? '' : 'none';
-            document.getElementById('barFaktury').style.display = view === 'faktury' ? '' : 'none';
+            document.getElementById('barFaktury').style.display = view === 'faktury' && invoiceReady() ? '' : 'none';
             document.getElementById('tabUklidy').classList.toggle('active', view === 'uklidy');
             document.getElementById('tabFaktury').classList.toggle('active', view === 'faktury');
             document.getElementById('tabUklidy').setAttribute('aria-selected', view === 'uklidy');
@@ -2869,20 +3178,78 @@
             if (e.target === this) closeInvSettings();
         });
 
-        // ---------- odkaz pro šéfovou ----------
-        document.getElementById('btnShareLink').addEventListener('click', async function() {
-            const url = bossLink();
-            const text = 'Tady jsou moje faktury za úklidy:';
+        // ---------- kód pro šéfovou ----------
+        document.getElementById('btnShareCode').addEventListener('click', async function() {
+            const code = keyToCode(invSettings.key);
+            const text = 'Faktury za úklidy: otevři appku Moje úklidy ' + new URL('./', location.href).href +
+                ' , dej Faktury → „Mám kód“ a zadej: ' + code;
             if (navigator.share) {
-                try { await navigator.share({title: 'Faktury za úklidy', text, url}); return; }
+                try { await navigator.share({title: 'Kód k fakturám', text}); return; }
                 catch (e) { if (e && e.name === 'AbortError') return; }
             }
             try {
-                await navigator.clipboard.writeText(url);
-                showAlert('Odkaz je zkopírovaný. Vlož ho šéfové do zprávy.');
+                await navigator.clipboard.writeText(code);
+                showAlert('Kód je zkopírovaný: ' + code);
             } catch (e) {
-                showAlert('Pošli šéfové tenhle odkaz:\n' + url);
+                showAlert('Kód pro šéfovou: ' + code);
             }
+        });
+
+        // ---------- připojení kódem (šéfová) ----------
+        function openJoin() {
+            document.getElementById('joinCode').value = '';
+            const h = document.getElementById('joinHint');
+            h.className = 'form-hint';
+            h.textContent = 'Kód najde kolegyně v appce pod Faktury → „Kód pro šéfovou“.';
+            document.getElementById('joinModal').classList.add('active');
+            setTimeout(() => document.getElementById('joinCode').focus(), 50);
+        }
+
+        function closeJoin() {
+            document.getElementById('joinModal').classList.remove('active');
+        }
+
+        async function joinWithCode() {
+            const h = document.getElementById('joinHint');
+            const key = codeToKey(document.getElementById('joinCode').value);
+            if (!key) {
+                h.className = 'form-hint err';
+                h.textContent = 'Kód má 16 znaků, např. ABCD-EFGH-JKMN-PQRS. Zkontroluj ho.';
+                return;
+            }
+            const btn = document.getElementById('btnJoin');
+            btn.disabled = true;
+            try {
+                const data = await dbRequest('GET', 'faktury/' + encodeURIComponent(key));
+                invSettings.key = key;
+                saveInvoiceSettings();
+                closeJoin();
+                await syncInvoices(true);
+                const n = data && typeof data === 'object' ? Object.keys(data).length : 0;
+                showAlert(n ? 'Připojeno ✓ Vidíš ' + n + (n === 1 ? ' fakturu.' : (n <= 4 ? ' faktury.' : ' faktur.'))
+                            : 'Připojeno ✓ Zatím tu žádné faktury nejsou. Jestli kolegyně už nějakou vystavila, zkontroluj kód.');
+            } catch (e) {
+                h.className = 'form-hint err';
+                h.textContent = dbErrorText(e);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('btnJoinOpen').addEventListener('click', openJoin);
+        document.getElementById('btnCloseJoin').addEventListener('click', closeJoin);
+        document.getElementById('btnJoin').addEventListener('click', joinWithCode);
+        document.getElementById('joinCode').addEventListener('keydown', e => { if (e.key === 'Enter') joinWithCode(); });
+        document.getElementById('joinModal').addEventListener('click', function(e) { if (e.target === this) closeJoin(); });
+
+        document.getElementById('btnLeave').addEventListener('click', function() {
+            showConfirm('Odpojit se? Faktury tady přestaneš vidět. Kódem se můžeš kdykoli připojit znovu.', function() {
+                invSettings.key = '';
+                saveInvoiceSettings();
+                invoices = [];
+                try { localStorage.removeItem('invoicesCache'); } catch (e) {}
+                renderInvoices();
+            });
         });
 
         // ---------- nová faktura ----------
@@ -2980,7 +3347,7 @@
                 try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
                 closeInvoiceModal();
                 renderInvoices();
-                showAlert('Faktura ' + number + ' na ' + total.toLocaleString('cs-CZ') + ' Kč je uložená. Šéfová ji uvidí na svém odkazu.');
+                showAlert('Faktura ' + number + ' na ' + total.toLocaleString('cs-CZ') + ' Kč je uložená. Šéfová ji uvidí ve své appce.');
             } catch (e) {
                 console.warn(e);
                 showAlert(dbErrorText(e) + ' Faktura se nevytvořila, zkus to znovu.');
@@ -3004,7 +3371,41 @@
         });
 
         // ---------- smazání faktury (jen nezaplacené) ----------
+        function propagatePaid() {
+            let changed = false;
+            invoices.forEach(inv => {
+                if (inv.status !== 'paid') return;
+                (inv.cleaningIds || []).forEach(cid => {
+                    const c = cleanings.find(x => x.id === cid);
+                    if (c && !c.paid) { c.paid = true; c.paidAt = inv.paidAt || new Date().toISOString(); changed = true; }
+                });
+            });
+            if (changed) { save(); render(); }
+        }
+
+        function markInvoicePaid(id) {
+            const inv = invoices.find(x => x.id === id);
+            if (!inv) return;
+            showConfirm('Faktura ' + inv.number + ' na ' + Number(inv.total || 0).toLocaleString('cs-CZ') + ' Kč je zaplacená?', async function() {
+                const patch = {status: 'paid', paidAt: new Date().toISOString()};
+                try {
+                    await dbRequest('PATCH', 'faktury/' + encodeURIComponent(invSettings.key) + '/' + encodeURIComponent(id), patch);
+                    Object.assign(inv, patch);
+                    try { localStorage.setItem('invoicesCache', JSON.stringify(invoices)); } catch (e) {}
+                    propagatePaid();
+                    renderInvoices();
+                    showToast('paid');
+                } catch (err) {
+                    showAlert(dbErrorText(err) + ' Zaplacení se neuložilo, zkus to znovu.');
+                }
+            });
+        }
+
         document.getElementById('viewFaktury').addEventListener('click', function(e) {
+            const v = e.target.closest('[data-inv-action="view"]');
+            if (v) { openInvoiceViewer(v.dataset.invId); return; }
+            const pd = e.target.closest('[data-inv-action="paid"]');
+            if (pd) { markInvoicePaid(pd.dataset.invId); return; }
             const b = e.target.closest('[data-inv-action="delete"]');
             if (!b) return;
             const id = b.dataset.invId;
@@ -3033,6 +3434,7 @@
 
         renderInvoices();
         if (invSettings.key) setTimeout(() => syncInvoices(true), 800);
+        if (invSettings.key && !isIssuer()) switchView('faktury');
 
         // ---------- Appka na ploše (PWA) ----------
         if ('serviceWorker' in navigator) {
