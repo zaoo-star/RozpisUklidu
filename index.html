@@ -1537,7 +1537,7 @@
         </button>
     </div>
 
-    <div class="footer">Vytvořil Zaoo · verze <span id="appVersion">16</span></div>
+    <div class="footer">Vytvořil Zaoo · verze <span id="appVersion">17</span></div>
 
     <div class="sync-indicator" id="syncIndicator">
         <span class="sync-icon">🔄</span> <span class="sync-text">Ukládám...</span>
@@ -1653,6 +1653,11 @@
             <div class="pay-choice" role="radiogroup" aria-label="Kdo fakturu uvidí">
                 <label><input type="radio" name="invVisibility" value="vsichni" checked><span>Všichni s heslem</span></label>
                 <label><input type="radio" name="invVisibility" value="ja"><span>Jen já</span></label>
+            </div>
+            <div class="pay-label">Vzhled faktury</div>
+            <div class="pay-choice" role="radiogroup" aria-label="Vzhled faktury">
+                <label><input type="radio" name="invLayout" value="rozpis" checked><span>Rozpis úklidů</span></label>
+                <label><input type="radio" name="invLayout" value="souhrn"><span>Jen celkem</span></label>
             </div>
             <div class="pay-label">Způsob platby</div>
             <div class="pay-choice" role="radiogroup" aria-label="Způsob platby">
@@ -3225,6 +3230,17 @@
                     ${cash ? '' : '<div><div class="fact-label">Číslo účtu</div><div class="fact-value">' + esc(s.account) + '</div></div>'}
                     ${cash ? '' : '<div><div class="fact-label">Variabilní symbol</div><div class="fact-value">' + esc(vs) + '</div></div>'}
                 </div>
+                ${inv.layout === 'souhrn' ? `
+                <table>
+                    <thead><tr><th>Popis</th><th class="num">Celková doba</th><th class="num">Cena</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td>Úklidové práce</td>
+                            <td class="num">${(() => { const m = (inv.items || []).reduce((t, i) => t + (i.duration || 0), 0); return m ? formatDuration(m) : '–'; })()}</td>
+                            <td class="num">${kc2(inv.total)}</td>
+                        </tr>
+                    </tbody>
+                </table>` : `
                 <table>
                     <thead><tr><th>Datum</th><th>Popis</th><th class="num hide-sm">Doba</th><th class="num">Částka</th></tr></thead>
                     <tbody>
@@ -3236,7 +3252,7 @@
                                 <td class="num">${kc2(i.price)}</td>
                             </tr>`).join('')}
                     </tbody>
-                </table>
+                </table>`}
                 <div class="totals">
                     ${qr ? '<div class="qr">' + qr + 'QR Platba</div>' : ''}
                     <div class="grand">
@@ -3590,6 +3606,8 @@
                 return;
             }
             const lastPay = invSettings.lastPayMethod === 'hotove' ? 'hotove' : 'prevod';
+            const lastLayout = invSettings.lastLayout === 'souhrn' ? 'souhrn' : 'rozpis';
+            document.querySelectorAll('input[name="invLayout"]').forEach(i => { i.checked = i.value === lastLayout; });
             document.querySelectorAll('input[name="payMethod"]').forEach(i => { i.checked = i.value === lastPay; });
             const lastVis = invSettings.lastVisibility === 'ja' ? 'ja' : 'vsichni';
             document.querySelectorAll('input[name="invVisibility"]').forEach(i => { i.checked = i.value === lastVis; });
@@ -3635,6 +3653,7 @@
                     supplier: invSettings.supplier,
                     customer: invSettings.customer,
                     paymentMethod: (document.querySelector('input[name="payMethod"]:checked') || {}).value === 'hotove' ? 'hotove' : 'prevod',
+                    layout: (document.querySelector('input[name="invLayout"]:checked') || {}).value === 'souhrn' ? 'souhrn' : 'rozpis',
                     vatNote: invSettings.vatNote !== false,
                     tradeNote: invSettings.tradeNote !== false && !!(invSettings.supplier && invSettings.supplier.ico),
                     items: chosen.map(c => ({
@@ -3655,6 +3674,7 @@
                 markSeen(id);
                 invSettings.lastVisibility = isPrivate ? 'ja' : 'vsichni';
                 invSettings.lastPayMethod = inv.paymentMethod;
+                invSettings.lastLayout = inv.layout;
                 saveInvoiceSettings();
                 chosen.forEach(c => { c.invoiceId = id; c.invoiceNumber = number; });
                 save();
