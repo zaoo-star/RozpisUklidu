@@ -792,11 +792,27 @@
             cursor: pointer;
         }
 
-        .pick-row input { width: 22px; height: 22px; accent-color: var(--accent); flex-shrink: 0; }
+        .pick-row input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); flex-shrink: 0; }
         .pick-row .grow { flex: 1; min-width: 0; }
         .pick-addr { font-weight: 700; overflow-wrap: anywhere; }
         .pick-date { color: var(--muted); font-size: 0.9rem; }
         .pick-price { font-weight: 800; white-space: nowrap; }
+        .pick-row { cursor: default; }
+        .pick-main { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; }
+        .pick-price-box { display: flex; align-items: center; gap: 4px; font-weight: 800; flex-shrink: 0; }
+        .pick-price-input {
+            width: 86px;
+            padding: 9px 8px;
+            border: 2px solid #dde4e1;
+            border-radius: 10px;
+            background: var(--surface);
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 800;
+            text-align: right;
+            color: var(--text);
+        }
+        .pick-price-input:focus { outline: none; border-color: var(--accent); }
         .pick-row.disabled { opacity: 0.55; cursor: default; }
         .pick-warn { color: var(--gold); font-size: 0.85rem; font-weight: 600; }
 
@@ -1537,7 +1553,7 @@
         </button>
     </div>
 
-    <div class="footer">Vytvořil Zaoo · verze <span id="appVersion">17</span></div>
+    <div class="footer">Vytvořil Zaoo · verze <span id="appVersion">18</span></div>
 
     <div class="sync-indicator" id="syncIndicator">
         <span class="sync-icon">🔄</span> <span class="sync-text">Ukládám...</span>
@@ -3574,23 +3590,35 @@
             return {unpaid: free.filter(c => !c.paid), paid: free.filter(c => c.paid)};
         }
 
+        // řádek výběru: zaškrtnutí + cena, kterou jde přímo přepsat
         function pickRowHTML(c, checked) {
-            const ok = !!c.price;
+            const has = !!c.price;
             return `
-                <label class="pick-row ${ok ? '' : 'disabled'}">
-                    <input type="checkbox" value="${esc(c.id)}" ${!ok ? 'disabled' : (checked ? 'checked' : '')}>
-                    <span class="grow">
-                        <span class="pick-addr">${esc(c.address)}</span><br>
-                        <span class="pick-date">${formatDate(c.date)}</span>
-                        ${ok ? '' : '<br><span class="pick-warn">Doplň cenu, pak půjde přidat</span>'}
+                <div class="pick-row" data-id="${esc(c.id)}">
+                    <label class="pick-main">
+                        <input type="checkbox" class="pick-check" value="${esc(c.id)}" ${has && checked ? 'checked' : ''}>
+                        <span class="grow">
+                            <span class="pick-addr">${esc(c.address)}</span><br>
+                            <span class="pick-date">${formatDate(c.date)}${c.duration ? ' · ' + formatDuration(c.duration) : ''}</span>
+                        </span>
+                    </label>
+                    <span class="pick-price-box">
+                        <input type="number" class="pick-price-input" inputmode="numeric" min="0" step="1"
+                               value="${has ? esc(c.price) : ''}" placeholder="cena" aria-label="Cena za úklid ${esc(c.address)}">
+                        <span>Kč</span>
                     </span>
-                    <span class="pick-price">${ok ? Number(c.price).toLocaleString('cs-CZ') + ' Kč' : '– Kč'}</span>
-                </label>`;
+                </div>`;
+        }
+
+        function pickPrice(id) {
+            const row = document.querySelector('#pickList .pick-row[data-id="' + CSS.escape(id) + '"]');
+            const v = row ? parseInt(row.querySelector('.pick-price-input').value, 10) : NaN;
+            return isNaN(v) || v < 0 ? 0 : v;
         }
 
         function updatePickTotal() {
-            const ids = [...document.querySelectorAll('#pickList input:checked')].map(i => i.value);
-            const total = cleanings.filter(c => ids.includes(c.id)).reduce((s, c) => s + (c.price || 0), 0);
+            const ids = [...document.querySelectorAll('#pickList .pick-check:checked')].map(i => i.value);
+            const total = ids.reduce((s, id) => s + pickPrice(id), 0);
             document.getElementById('pickTotal').textContent = total.toLocaleString('cs-CZ') + ' Kč';
             const btn = document.getElementById('btnCreateInvoice');
             btn.disabled = ids.length === 0;
@@ -3606,7 +3634,7 @@
                 return;
             }
             const lastPay = invSettings.lastPayMethod === 'hotove' ? 'hotove' : 'prevod';
-            const lastLayout = invSettings.lastLayout === 'souhrn' ? 'souhrn' : 'rozpis';
+            const lastLayout = invSettings.lastLayout === 'rozpis' ? 'rozpis' : 'souhrn'; // výchozí: Jen celkem
             document.querySelectorAll('input[name="invLayout"]').forEach(i => { i.checked = i.value === lastLayout; });
             document.querySelectorAll('input[name="payMethod"]').forEach(i => { i.checked = i.value === lastPay; });
             const lastVis = invSettings.lastVisibility === 'ja' ? 'ja' : 'vsichni';
@@ -3626,9 +3654,16 @@
         }
 
         async function createInvoice() {
-            const ids = [...document.querySelectorAll('#pickList input:checked')].map(i => i.value);
+            const ids = [...document.querySelectorAll('#pickList .pick-check:checked')].map(i => i.value);
             const chosen = cleanings.filter(c => ids.includes(c.id)).sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
             if (!chosen.length) return;
+            const prices = {};
+            chosen.forEach(c => { prices[c.id] = pickPrice(c.id); });
+            const noPrice = chosen.filter(c => !prices[c.id]);
+            if (noPrice.length) {
+                showAlert('Doplň cenu u: ' + noPrice.map(c => c.address).join(', '));
+                return;
+            }
             const btn = document.getElementById('btnCreateInvoice');
             btn.disabled = true;
             btn.textContent = 'Ukládám…';
@@ -3642,7 +3677,7 @@
                     .reduce((m, n) => Math.max(m, parseInt(n.slice(5), 10) || 0), 0);
                 const number = year + '-' + String(maxSeq + 1).padStart(3, '0');
                 const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-                const total = chosen.reduce((s, c) => s + (c.price || 0), 0);
+                const total = chosen.reduce((s, c) => s + prices[c.id], 0);
                 const allPaid = chosen.every(c => c.paid);
                 const inv = {
                     id,
@@ -3660,7 +3695,7 @@
                         date: c.date,
                         address: c.address || '',
                         duration: c.duration || 0,
-                        price: c.price || 0
+                        price: prices[c.id]
                     })),
                     cleaningIds: chosen.map(c => c.id),
                     creatorId: myId(),
@@ -3676,7 +3711,8 @@
                 invSettings.lastPayMethod = inv.paymentMethod;
                 invSettings.lastLayout = inv.layout;
                 saveInvoiceSettings();
-                chosen.forEach(c => { c.invoiceId = id; c.invoiceNumber = number; });
+                // upravené ceny se uloží i k úklidům, ať sedí výdělky a statistiky
+                chosen.forEach(c => { c.price = prices[c.id]; c.invoiceId = id; c.invoiceNumber = number; });
                 save();
                 render();
                 invoices = existing.concat([inv]);
@@ -3699,8 +3735,16 @@
         document.getElementById('btnCloseInvoice').addEventListener('click', closeInvoiceModal);
         document.getElementById('btnCreateInvoice').addEventListener('click', createInvoice);
         document.getElementById('pickList').addEventListener('change', updatePickTotal);
+        document.getElementById('pickList').addEventListener('input', function(e) {
+            const inp = e.target.closest('.pick-price-input');
+            if (inp) {
+                const box = inp.closest('.pick-row').querySelector('.pick-check');
+                if (parseInt(inp.value, 10) > 0) box.checked = true;
+            }
+            updatePickTotal();
+        });
         document.getElementById('btnPickAll').addEventListener('click', function() {
-            const boxes = [...document.querySelectorAll('#pickList input:not(:disabled)')];
+            const boxes = [...document.querySelectorAll('#pickList .pick-check')];
             const all = boxes.every(b => b.checked);
             boxes.forEach(b => { b.checked = !all; });
             updatePickTotal();
